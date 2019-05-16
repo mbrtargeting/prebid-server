@@ -3,7 +3,7 @@
     "id": "auction-id",
     "imp": [
       {
-        "id": "test-imp-id",
+        "id": "3",
         "banner": {
           "format": [
             {
@@ -48,7 +48,7 @@
           "ssat": 2,
           "bids": [
             {
-              "bid": "test-imp-id",
+              "bid": "3",
               "sid": "123456",
               "sizes": [[468, 60], [300, 600]]
             }
@@ -58,16 +58,34 @@
       "mockResponse": {
         "status": 200,
         "body": {
-          "id": "test-request-id"
+          "id": "test-request-id",
+          "bids": [
+            {
+              "bidId": "3",
+              "cpm": 2,
+              "width": 468,
+              "height": 60,
+              "ad": "advert"
+            }
+          ]
         }
       }
     }
   ],
   "expectedBidResponses": [
     {
-      "currency": "USD",
-      "bids": [
-      ]
+      "currency": "EUR",
+      "bids" : [{
+        "bid": {
+          "id": "",
+          "impid": "3",
+          "price": 2,
+          "adm": "advert",
+          "w": 468,
+          "h": 60
+        },
+        "type": "banner"
+      }]
     }
   ]
 }

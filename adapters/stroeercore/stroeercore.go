@@ -12,52 +12,75 @@ type StroeerCoreBidder struct {
 	Url string `json:"url"`
 }
 
-type BidderRootRequest struct {
-	Id   string             `json:"id"`
-	Ssat int8               `json:"ssat"`
-	Bids []BidderBidRequest `json:"bids"`
+type StroeerRootRequest struct {
+	Id   string              `json:"id"`
+	Ssat int8                `json:"ssat"`
+	Bids []StroeerBidRequest `json:"bids"`
 }
 
-type BidderBidRequest struct {
+type StroeerBidRequest struct {
 	Bid   string      `json:"bid"`
 	Sid   string      `json:"sid"`
 	Sizes [][2]uint64 `json:"sizes"`
 }
 
-type BidderRootResponse struct {
-	Bids []BidderBidResponse ``
+type StroeerRootResponse struct {
+	Bids []StroeerBidResponse `json:"bids"`
 }
 
-type BidderBidResponse struct {
-	bidId  string
-	cpm    float64
-	width  uint64
-	height uint64
-	ad     string
+type StroeerBidResponse struct {
+	BidId  string  `json:"bidId"`
+	Cpm    float64 `json:"cpm"`
+	Width  uint64  `json:"width"`
+	Height uint64  `json:"height"`
+	Ad     string  `json:"ad"`
 }
 
 func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
-	bidderResponse := adapters.NewBidderResponse()
 	var errors []error
+	stroeerResponse := StroeerRootResponse{}
+
+	if err := json.Unmarshal(response.Body, &stroeerResponse); err != nil {
+		errors = append(errors, err)
+		return nil, errors
+	}
+
+	bidderResponse := adapters.NewBidderResponse()
+
+	for _, bid := range stroeerResponse.Bids {
+		openRtbBid := openrtb.Bid{
+			ImpID: bid.BidId,
+			W:     bid.Width,
+			H:     bid.Height,
+			Price: bid.Cpm,
+			AdM:   bid.Ad,
+		}
+
+		bidderResponse.Bids = append(bidderResponse.Bids, &adapters.TypedBid{
+			Bid:     &openRtbBid,
+			BidType: openrtb_ext.BidTypeBanner,
+		})
+	}
+
 	return bidderResponse, errors
 }
 
-func (b *StroeerCoreBidder) MakeRequests(request *openrtb.BidRequest) ([]*adapters.RequestData, []error) {
-	errors := make([]error, 0, len(request.Imp))
+func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest) ([]*adapters.RequestData, []error) {
+	errors := make([]error, 0, len(internalRequest.Imp))
 
-	bidderRequest := BidderRootRequest{}
-	bidderRequest.Id = request.ID
-	bidderRequest.Ssat = 2
+	stroeerRequest := StroeerRootRequest{}
+	stroeerRequest.Id = internalRequest.ID
+	stroeerRequest.Ssat = 2
 
-	bidderRequest.Bids = []BidderBidRequest{}
+	stroeerRequest.Bids = []StroeerBidRequest{}
 
-	imp := request.Imp[0]
+	imp := internalRequest.Imp[0]
 
-	bidderBidRequest := BidderBidRequest{}
-	bidderBidRequest.Bid = imp.ID
+	stroeerBidRequest := StroeerBidRequest{}
+	stroeerBidRequest.Bid = imp.ID
 
 	for _, format := range imp.Banner.Format {
-		bidderBidRequest.Sizes = append(bidderBidRequest.Sizes, [2]uint64{format.W, format.H})
+		stroeerBidRequest.Sizes = append(stroeerBidRequest.Sizes, [2]uint64{format.W, format.H})
 	}
 
 	var bidderExt adapters.ExtImpBidder
@@ -72,11 +95,11 @@ func (b *StroeerCoreBidder) MakeRequests(request *openrtb.BidRequest) ([]*adapte
 		return nil, errors
 	}
 
-	bidderBidRequest.Sid = stroeerExt.Sid
+	stroeerBidRequest.Sid = stroeerExt.Sid
 
-	bidderRequest.Bids = append(bidderRequest.Bids, bidderBidRequest)
+	stroeerRequest.Bids = append(stroeerRequest.Bids, stroeerBidRequest)
 
-	reqJSON, err := json.Marshal(bidderRequest)
+	reqJSON, err := json.Marshal(stroeerRequest)
 	if err != nil {
 		errors = append(errors, err)
 		return nil, errors
