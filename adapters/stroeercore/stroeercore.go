@@ -47,7 +47,7 @@ func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, extern
 		return nil, errors
 	}
 
-	bidderResponse := adapters.NewBidderResponseWithBidsCapacity(1)
+	bidderResponse := adapters.NewBidderResponseWithBidsCapacity(len(stroeerResponse.Bids))
 
 	for _, bid := range stroeerResponse.Bids {
 		openRtbBid := openrtb.Bid{
@@ -76,30 +76,30 @@ func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest) ([
 
 	stroeerRequest.Bids = []StroeerBidRequest{}
 
-	imp := internalRequest.Imp[0]
+	for _, imp := range internalRequest.Imp {
+		stroeerBidRequest := StroeerBidRequest{}
+		stroeerBidRequest.Bid = imp.ID
 
-	stroeerBidRequest := StroeerBidRequest{}
-	stroeerBidRequest.Bid = imp.ID
+		for _, format := range imp.Banner.Format {
+			stroeerBidRequest.Sizes = append(stroeerBidRequest.Sizes, [2]uint64{format.W, format.H})
+		}
 
-	for _, format := range imp.Banner.Format {
-		stroeerBidRequest.Sizes = append(stroeerBidRequest.Sizes, [2]uint64{format.W, format.H})
+		var bidderExt adapters.ExtImpBidder
+		if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
+			errors = append(errors, err)
+			continue
+		}
+
+		var stroeerExt openrtb_ext.ExtImpStroeercore
+		if err := json.Unmarshal(bidderExt.Bidder, &stroeerExt); err != nil {
+			errors = append(errors, err)
+			continue
+		}
+
+		stroeerBidRequest.Sid = stroeerExt.Sid
+
+		stroeerRequest.Bids = append(stroeerRequest.Bids, stroeerBidRequest)
 	}
-
-	var bidderExt adapters.ExtImpBidder
-	if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
-		errors = append(errors, err)
-		return nil, errors
-	}
-
-	var stroeerExt openrtb_ext.ExtImpStroeercore
-	if err := json.Unmarshal(bidderExt.Bidder, &stroeerExt); err != nil {
-		errors = append(errors, err)
-		return nil, errors
-	}
-
-	stroeerBidRequest.Sid = stroeerExt.Sid
-
-	stroeerRequest.Bids = append(stroeerRequest.Bids, stroeerBidRequest)
 
 	reqJSON, err := json.Marshal(stroeerRequest)
 	if err != nil {

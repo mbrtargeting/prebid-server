@@ -1,0 +1,137 @@
+{
+  "mockBidRequest": {
+    "id": "auction-id",
+    "imp": [
+      {
+        "id": "3",
+        "banner": {
+          "format": [
+            {
+              "w": 468,
+              "h": 60
+            },
+            {
+              "w": 300,
+              "h": 600
+            }
+          ]
+        },
+        "ext": {
+          "bidder": {
+            "sid": "123456"
+          }
+        }
+      },
+      {
+        "id": "9",
+        "banner": {
+          "format": [
+            {
+              "w": 770,
+              "h": 250
+            }
+          ]
+        },
+        "ext": {
+          "bidder": {
+            "sid": "85310"
+          }
+        }
+      }
+    ],
+    "device": {
+      "ua": "test-user-agent",
+      "ip": "123.123.123.123",
+      "language": "en",
+      "dnt": 0
+    },
+    "site": {
+      "domain": "www.publisher.com",
+      "page": "http://www.publisher.com/some/path"
+    },
+    "user": {
+      "buyeruid": "test-buyer-user-id"
+    }
+  },
+  "httpCalls": [
+    {
+      "expectedRequest": {
+        "headers": {
+          "Accept": ["application/json"],
+          "Content-Type": ["application/json;charset=utf-8"],
+          "User-Agent": ["test-user-agent"],
+          "X-Forwarded-For": ["123.123.123.123"],
+          "Cookie": ["uu=test-buyer-user-id"]
+        },
+        "uri": "http://localhost:8361/xyz",
+        "body": {
+          "id": "auction-id",
+          "ssat": 2,
+          "bids": [
+            {
+              "bid": "3",
+              "sid": "123456",
+              "sizes": [[468, 60], [300, 600]]
+            },
+            {
+              "bid": "9",
+              "sid": "85310",
+              "sizes": [[770, 250]]
+            }
+          ]
+        }
+      },
+      "mockResponse": {
+        "status": 200,
+        "body": {
+          "id": "test-request-id",
+          "bids": [
+            {
+              "bidId": "3",
+              "cpm": 2,
+              "width": 468,
+              "height": 60,
+              "ad": "advert"
+            },
+            {
+              "bidId": "9",
+              "cpm": 7.21,
+              "width": 770,
+              "height": 250,
+              "ad": "another advert"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "expectedBidResponses": [
+    {
+      "currency": "EUR",
+      "bids": [
+        {
+          "bid": {
+            "id": "",
+            "impid": "3",
+            "price": 2,
+            "adm": "advert",
+            "w": 468,
+            "h": 60
+          },
+          "type": "banner"
+        },
+        {
+          "bid": {
+            "id": "",
+            "impid": "9",
+            "price": 7.21,
+            "adm": "another advert",
+            "w": 770,
+            "h": 250
+          },
+          "type": "banner"
+        }
+      ]
+    }
+  ]
+}
