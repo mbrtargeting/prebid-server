@@ -41,6 +41,11 @@
     {
       "expectedRequest": {
         "headers": {
+          "Accept": ["application/json"],
+          "Content-Type": ["application/json;charset=utf-8"],
+          "User-Agent": ["test-user-agent"],
+          "X-Forwarded-For": ["123.123.123.123"],
+          "Cookie": ["uu=test-buyer-user-id"]
         },
         "uri": "http://localhost:8361/xyz",
         "body": {

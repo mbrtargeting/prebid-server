@@ -2,10 +2,12 @@ package stroeercore
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/mxmCherry/openrtb"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"net/http"
+	"strings"
 )
 
 type StroeerCoreBidder struct {
@@ -45,7 +47,7 @@ func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, extern
 		return nil, errors
 	}
 
-	bidderResponse := adapters.NewBidderResponse()
+	bidderResponse := adapters.NewBidderResponseWithBidsCapacity(1)
 
 	for _, bid := range stroeerResponse.Bids {
 		openRtbBid := openrtb.Bid{
@@ -106,6 +108,17 @@ func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest) ([
 	}
 
 	headers := http.Header{}
+	headers.Add("Content-Type", "application/json;charset=utf-8")
+	headers.Add("Accept", "application/json")
+	headers.Add("User-Agent", internalRequest.Device.UA)
+	headers.Add("X-Forwarded-For", internalRequest.Device.IP)
+
+	if internalRequest.User != nil {
+		userID := strings.TrimSpace(internalRequest.User.BuyerUID)
+		if len(userID) > 0 {
+			headers.Add("Cookie", fmt.Sprintf("uu=%s", userID))
+		}
+	}
 
 	return []*adapters.RequestData{{
 		Method:  "POST",
