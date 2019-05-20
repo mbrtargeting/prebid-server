@@ -1,6 +1,7 @@
 {
   "mockBidRequest": {
     "id": "auction-id",
+    "cur": ["EUR"],
     "imp": [
       {
         "id": "3",
@@ -111,23 +112,25 @@
       "bids": [
         {
           "bid": {
-            "id": "",
+            "id": "0",
             "impid": "3",
             "price": 2,
             "adm": "advert",
             "w": 468,
-            "h": 60
+            "h": 60,
+            "crid": "0"
           },
           "type": "banner"
         },
         {
           "bid": {
-            "id": "",
+            "id": "0",
             "impid": "9",
             "price": 7.21,
             "adm": "another advert",
             "w": 770,
-            "h": 250
+            "h": 250,
+            "crid": "0"
           },
           "type": "banner"
         }

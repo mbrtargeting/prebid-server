@@ -48,14 +48,17 @@ func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, extern
 	}
 
 	bidderResponse := adapters.NewBidderResponseWithBidsCapacity(len(stroeerResponse.Bids))
+	bidderResponse.Currency = "EUR"
 
 	for _, bid := range stroeerResponse.Bids {
 		openRtbBid := openrtb.Bid{
+			ID:    "0",
 			ImpID: bid.BidId,
 			W:     bid.Width,
 			H:     bid.Height,
 			Price: bid.Cpm,
 			AdM:   bid.Ad,
+			CrID:  "0",
 		}
 
 		bidderResponse.Bids = append(bidderResponse.Bids, &adapters.TypedBid{
