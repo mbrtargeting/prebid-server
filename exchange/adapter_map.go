@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"fmt"
+	"github.com/prebid/prebid-server/adapters/stroeercore"
 	"net/http"
 	"strings"
 
@@ -62,6 +63,7 @@ func newAdapterMap(client *http.Client, cfg *config.Configuration, infos adapter
 			cfg.Adapters[string(openrtb_ext.BidderRubicon)].XAPI.Tracker),
 		openrtb_ext.BidderSomoaudience:   somoaudience.NewSomoaudienceBidder(cfg.Adapters[string(openrtb_ext.BidderSomoaudience)].Endpoint),
 		openrtb_ext.BidderSovrn:          sovrn.NewSovrnBidder(client, cfg.Adapters[string(openrtb_ext.BidderSovrn)].Endpoint),
+		openrtb_ext.BidderStroeerCore:    stroeercore.NewStroeerCoreBidder(cfg.Adapters[strings.ToLower(string(openrtb_ext.BidderStroeerCore))].Endpoint),
 		openrtb_ext.Bidder33Across:       ttx.New33AcrossBidder(cfg.Adapters[string(openrtb_ext.Bidder33Across)].Endpoint),
 		openrtb_ext.BidderGrid:           grid.NewGridBidder(cfg.Adapters[string(openrtb_ext.BidderGrid)].Endpoint),
 		openrtb_ext.BidderSonobi:         sonobi.NewSonobiBidder(client, cfg.Adapters[string(openrtb_ext.BidderSonobi)].Endpoint),
