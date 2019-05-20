@@ -25,11 +25,25 @@
       }
     ],
     "device": {
+      "geo":{
+        "city":"Paris",
+        "country":"FRA",
+        "lat": 48.860757,
+        "lon": 2.337562,
+        "region":"IDF",
+        "zip":"75001"
+      },
       "ua": "test-user-agent",
       "ip": "123.123.123.123",
       "language": "en",
       "dnt": 0,
-      "ifa":"e785543f-0be8-48f1-2c53-b4ae46a942d3"
+      "devicetype": 4,
+      "ifa": "e785543f-0be8-48f1-2c53-b4ae46a942d3",
+      "hwv": "6S",
+      "make": "Apple",
+      "model": "iPhone",
+      "os": "iOS",
+      "osv": "8.1"
     },
     "app": {
       "id": "a422f9bf94df0c59389d5beff67f8821",
