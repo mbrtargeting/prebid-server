@@ -32,7 +32,10 @@
     },
     "site": {
       "domain": "www.publisher.com",
-      "page": "http://www.publisher.com/some/path"
+      "page": "http://www.publisher.com/some/path",
+      "ext": {
+        "amp": 0
+      }
     },
     "user": {
       "buyeruid": "test-buyer-user-id"
@@ -48,10 +51,11 @@
           "X-Forwarded-For": ["123.123.123.123"],
           "Cookie": ["uu=test-buyer-user-id"]
         },
-        "uri": "http://localhost:8361/xyz",
+        "uri": "http://localhost:8361/hba",
         "body": {
           "id": "auction-id",
           "ssat": 2,
+          "amp": 0,
           "bids": [
             {
               "bid": "3",

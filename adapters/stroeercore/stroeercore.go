@@ -17,6 +17,7 @@ type StroeerCoreBidder struct {
 type StroeerRootRequest struct {
 	Id   string              `json:"id"`
 	Ssat int8                `json:"ssat"`
+	Amp  int8                `json:"amp"`
 	Bids []StroeerBidRequest `json:"bids"`
 }
 
@@ -71,11 +72,68 @@ func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, extern
 }
 
 func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest) ([]*adapters.RequestData, []error) {
+	if internalRequest.App != nil {
+		return b.MakeRequestsForApp(internalRequest)
+	} else {
+		return b.MakeRequestsForSite(internalRequest)
+	}
+}
+
+func (b *StroeerCoreBidder) MakeRequestsForApp(internalRequest *openrtb.BidRequest) ([]*adapters.RequestData, []error) {
+	errors := make([]error, 0, len(internalRequest.Imp))
+
+	for _, imp := range internalRequest.Imp {
+		var bidderExt adapters.ExtImpBidder
+		if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
+			errors = append(errors, err)
+			continue
+		}
+
+		var stroeerExt openrtb_ext.ExtImpStroeercore
+		if err := json.Unmarshal(bidderExt.Bidder, &stroeerExt); err != nil {
+			errors = append(errors, err)
+			continue
+		}
+
+		imp.TagID = stroeerExt.Sid
+	}
+
+	reqJSON, err := json.Marshal(*internalRequest)
+	if err != nil {
+		errors = append(errors, err)
+		return nil, errors
+	}
+
+	tempReq := openrtb.BidRequest{}
+	json.Unmarshal(reqJSON, &tempReq)
+
+	headers := http.Header{}
+	headers.Add("Content-Type", "application/json;charset=utf-8")
+	headers.Add("Accept", "application/json")
+
+	return []*adapters.RequestData{{
+		Method:  "POST",
+		Uri:     b.Url + "openrtb/hba",
+		Body:    reqJSON,
+		Headers: headers,
+	}}, errors
+}
+
+// TODO: Need to revisit. For now use HBA endpoint for browser traffic.
+func (b *StroeerCoreBidder) MakeRequestsForSite(internalRequest *openrtb.BidRequest) ([]*adapters.RequestData, []error) {
 	errors := make([]error, 0, len(internalRequest.Imp))
 
 	stroeerRequest := StroeerRootRequest{}
 	stroeerRequest.Id = internalRequest.ID
 	stroeerRequest.Ssat = 2
+
+	var prebidExtSite openrtb_ext.ExtSite
+
+	if err := json.Unmarshal(internalRequest.Site.Ext, &prebidExtSite); err != nil {
+		errors = append(errors, err)
+	}
+
+	stroeerRequest.Amp = prebidExtSite.AMP
 
 	stroeerRequest.Bids = []StroeerBidRequest{}
 
@@ -125,7 +183,7 @@ func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest) ([
 
 	return []*adapters.RequestData{{
 		Method:  "POST",
-		Uri:     b.Url,
+		Uri:     b.Url + "hba",
 		Body:    reqJSON,
 		Headers: headers,
 	}}, errors
