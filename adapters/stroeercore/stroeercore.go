@@ -104,9 +104,6 @@ func (b *StroeerCoreBidder) MakeRequestsForApp(internalRequest *openrtb.BidReque
 		return nil, errors
 	}
 
-	tempReq := openrtb.BidRequest{}
-	json.Unmarshal(reqJSON, &tempReq)
-
 	headers := http.Header{}
 	headers.Add("Content-Type", "application/json;charset=utf-8")
 	headers.Add("Accept", "application/json")
