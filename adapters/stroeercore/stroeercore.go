@@ -98,6 +98,10 @@ func (b *StroeerCoreBidder) MakeRequestsForApp(internalRequest *openrtb.BidReque
 		imp.TagID = stroeerExt.Sid
 	}
 
+	if internalRequest.Device.Geo != nil {
+		internalRequest.Device.Geo.Type = openrtb.LocationType(1)
+	}
+
 	reqJSON, err := json.Marshal(*internalRequest)
 	if err != nil {
 		errors = append(errors, err)
