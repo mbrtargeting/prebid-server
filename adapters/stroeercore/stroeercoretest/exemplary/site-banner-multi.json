@@ -62,28 +62,66 @@
       "expectedRequest": {
         "headers": {
           "Accept": ["application/json"],
-          "Content-Type": ["application/json;charset=utf-8"],
-          "User-Agent": ["test-user-agent"],
-          "X-Forwarded-For": ["123.123.123.123"],
-          "Cookie": ["uu=test-buyer-user-id"]
+          "Content-Type": ["application/json;charset=utf-8"]
         },
-        "uri": "http://localhost:8361/hba",
+        "uri": "http://localhost:8361/s2shba",
         "body": {
           "id": "auction-id",
-          "ssat": 2,
-          "amp": 1,
-          "bids": [
+          "cur": ["EUR"],
+          "imp": [
             {
-              "bid": "3",
-              "sid": "123456",
-              "sizes": [[468, 60], [300, 600]]
+              "id": "3",
+              "banner": {
+                "format": [
+                  {
+                    "w": 468,
+                    "h": 60
+                  },
+                  {
+                    "w": 300,
+                    "h": 600
+                  }
+                ]
+              },
+              "ext": {
+                "bidder": {
+                  "sid": "123456"
+                }
+              }
             },
             {
-              "bid": "9",
-              "sid": "85310",
-              "sizes": [[770, 250]]
+              "id": "9",
+              "banner": {
+                "format": [
+                  {
+                    "w": 770,
+                    "h": 250
+                  }
+                ]
+              },
+              "ext": {
+                "bidder": {
+                  "sid": "85310"
+                }
+              }
             }
-          ]
+          ],
+          "device": {
+            "ua": "test-user-agent",
+            "ip": "123.123.123.123",
+            "language": "en",
+            "dnt": 0
+          },
+          "site": {
+            "domain": "www.publisher.com",
+            "page": "http://www.publisher.com/some/path",
+            "ext": {
+              "amp": 1
+            }
+          },
+          "user": {
+            "buyeruid": "test-buyer-user-id"
+          }
         }
       },
       "mockResponse": {
