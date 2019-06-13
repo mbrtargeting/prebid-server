@@ -17,11 +17,13 @@ type StroeerRootResponse struct {
 }
 
 type StroeerBidResponse struct {
+	Id     string  `json:"id"`
 	BidId  string  `json:"bidId"`
 	Cpm    float64 `json:"cpm"`
 	Width  uint64  `json:"width"`
 	Height uint64  `json:"height"`
 	Ad     string  `json:"ad"`
+	CrId   string  `json:"crid"`
 }
 
 func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
@@ -38,13 +40,13 @@ func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, extern
 
 	for _, bid := range stroeerResponse.Bids {
 		openRtbBid := openrtb.Bid{
-			ID:    "0",
+			ID:    bid.Id,
 			ImpID: bid.BidId,
 			W:     bid.Width,
 			H:     bid.Height,
 			Price: bid.Cpm,
 			AdM:   bid.Ad,
-			CrID:  "0",
+			CrID:  bid.CrId,
 		}
 
 		bidderResponse.Bids = append(bidderResponse.Bids, &adapters.TypedBid{

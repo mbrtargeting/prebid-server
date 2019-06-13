@@ -130,18 +130,22 @@
           "id": "test-request-id",
           "bids": [
             {
+              "id": "3929239282-01",
               "bidId": "3",
               "cpm": 2,
               "width": 468,
               "height": 60,
-              "ad": "advert"
+              "ad": "advert",
+              "crid": "qwert"
             },
             {
+              "id": "3929239282-02",
               "bidId": "9",
               "cpm": 7.21,
               "width": 770,
               "height": 250,
-              "ad": "another advert"
+              "ad": "another advert",
+              "crid": "wasd"
             }
           ]
         }
@@ -154,25 +158,25 @@
       "bids": [
         {
           "bid": {
-            "id": "0",
+            "id": "3929239282-01",
             "impid": "3",
             "price": 2,
             "adm": "advert",
             "w": 468,
             "h": 60,
-            "crid": "0"
+            "crid": "qwert"
           },
           "type": "banner"
         },
         {
           "bid": {
-            "id": "0",
+            "id": "3929239282-02",
             "impid": "9",
             "price": 7.21,
             "adm": "another advert",
             "w": 770,
             "h": 250,
-            "crid": "0"
+            "crid": "wasd"
           },
           "type": "banner"
         }

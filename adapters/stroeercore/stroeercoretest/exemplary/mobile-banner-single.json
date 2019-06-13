@@ -155,11 +155,13 @@
           "id": "test-request-id",
           "bids": [
             {
+              "id": "4985939039393-04",
               "bidId": "3",
               "cpm": 0.24,
               "width": 468,
               "height": 60,
-              "ad": "advert"
+              "ad": "advert",
+              "crid": "XYZijk"
             }
           ]
         }
@@ -171,13 +173,13 @@
       "currency": "EUR",
       "bids" : [{
         "bid": {
-          "id": "0",
+          "id": "4985939039393-04",
           "impid": "3",
           "price": 0.24,
           "adm": "advert",
           "w": 468,
           "h": 60,
-          "crid": "0"
+          "crid": "XYZijk"
         },
         "type": "banner"
       }]
