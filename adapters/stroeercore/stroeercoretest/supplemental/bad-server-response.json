@@ -1,6 +1,21 @@
 {
   "mockBidRequest": {
     "id": "id",
+    "imp": [
+      {
+        "id": "id",
+        "tagid": "tagid",
+        "banner": {
+          "w": 300,
+          "h": 200
+        },
+        "ext": {
+          "bidder": {
+            "sid": "123456"
+          }
+        }
+      }
+    ],
     "user": {
       "buyeruid": "test-buyer-user-id"
     }
@@ -11,7 +26,21 @@
         "uri": "http://localhost:8361/s2shba",
         "body": {
           "id": "id",
-          "imp": null,
+          "imp": [
+            {
+              "id": "id",
+              "tagid": "tagid",
+              "banner": {
+                "w": 300,
+                "h": 200
+              },
+              "ext": {
+                "bidder": {
+                  "sid": "123456"
+                }
+              }
+            }
+          ],
           "user": {
             "buyeruid": "test-buyer-user-id"
           }
@@ -22,5 +51,7 @@
       }
     }
   ],
-  "expectedMakeBidsErrors": ["Unexpected http status code: 500."]
+  "expectedMakeBidsErrors": [
+    "Unexpected http status code: 500."
+  ]
 }
