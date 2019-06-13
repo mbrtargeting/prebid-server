@@ -2,8 +2,10 @@ package stroeercore
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/mxmCherry/openrtb"
 	"github.com/prebid/prebid-server/adapters"
+	"github.com/prebid/prebid-server/errortypes"
 	"github.com/prebid/prebid-server/openrtb_ext"
 	"net/http"
 )
@@ -27,6 +29,12 @@ type StroeerBidResponse struct {
 }
 
 func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+	if response.StatusCode != http.StatusOK {
+		return nil, []error{&errortypes.BadServerResponse{
+			Message: fmt.Sprintf("Unexpected http status code: %d.", response.StatusCode),
+		}}
+	}
+
 	var errors []error
 	stroeerResponse := StroeerRootResponse{}
 
@@ -77,8 +85,10 @@ func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest) ([
 		imp.TagID = stroeerExt.Sid
 	}
 
-	if internalRequest.Device.Geo != nil {
-		internalRequest.Device.Geo.Type = openrtb.LocationType(1)
+	if internalRequest.Device != nil {
+		if internalRequest.Device.Geo != nil {
+			internalRequest.Device.Geo.Type = openrtb.LocationType(1)
+		}
 	}
 
 	reqJSON, err := json.Marshal(*internalRequest)

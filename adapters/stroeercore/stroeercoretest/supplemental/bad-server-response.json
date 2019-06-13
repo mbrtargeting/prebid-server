@@ -1,0 +1,26 @@
+{
+  "mockBidRequest": {
+    "id": "id",
+    "user": {
+      "buyeruid": "test-buyer-user-id"
+    }
+  },
+  "httpCalls": [
+    {
+      "expectedRequest": {
+        "uri": "http://localhost:8361/s2shba",
+        "body": {
+          "id": "id",
+          "imp": null,
+          "user": {
+            "buyeruid": "test-buyer-user-id"
+          }
+        }
+      },
+      "mockResponse": {
+        "status": 500
+      }
+    }
+  ],
+  "expectedMakeBidsErrors": ["Unexpected http status code: 500."]
+}
