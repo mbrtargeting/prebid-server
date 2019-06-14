@@ -71,6 +71,7 @@
           "imp": [
             {
               "id": "3",
+              "tagid": "123456",
               "banner": {
                 "format": [
                   {
@@ -91,6 +92,7 @@
             },
             {
               "id": "9",
+              "tagid": "85310",
               "banner": {
                 "format": [
                   {

@@ -4,14 +4,13 @@
     "imp": [
       {
         "id": "id",
-        "tagid": "tagid",
         "banner": {
           "w": 300,
           "h": 200
         },
         "ext": {
           "bidder": {
-            "sid": "123456"
+            "sid": "tagid"
           }
         }
       }
@@ -36,7 +35,7 @@
               },
               "ext": {
                 "bidder": {
-                  "sid": "123456"
+                  "sid": "tagid"
                 }
               }
             }
