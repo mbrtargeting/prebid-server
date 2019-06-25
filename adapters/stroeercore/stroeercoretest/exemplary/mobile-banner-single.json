@@ -76,7 +76,7 @@
           "Accept": ["application/json"],
           "Content-Type": ["application/json;charset=utf-8"]
         },
-        "uri": "http://localhost:8361/s2shba",
+        "uri": "http://localhost:8361/s2sdsh",
         "body": {
           "id": "auction-id",
           "cur": ["EUR"],
