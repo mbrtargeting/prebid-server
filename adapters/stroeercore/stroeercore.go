@@ -104,7 +104,7 @@ func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest) ([
 
 	return []*adapters.RequestData{{
 		Method:  "POST",
-		Uri:     b.Url + "s2sdsh",
+		Uri:     b.Url,
 		Body:    reqJSON,
 		Headers: headers,
 	}}, errors

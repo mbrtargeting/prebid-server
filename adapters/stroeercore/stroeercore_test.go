@@ -6,5 +6,5 @@ import (
 )
 
 func TestJsonSamples(t *testing.T) {
-	adapterstest.RunJSONBidderTest(t, "stroeercoretest", NewStroeerCoreBidder("http://localhost:8361/"))
+	adapterstest.RunJSONBidderTest(t, "stroeercoretest", NewStroeerCoreBidder("http://localhost:8361/s2sdsh"))
 }
