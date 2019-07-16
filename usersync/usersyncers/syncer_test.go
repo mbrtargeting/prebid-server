@@ -36,6 +36,7 @@ func TestNewSyncerMap(t *testing.T) {
 			string(openrtb_ext.BidderRubicon):        syncConfig,
 			string(openrtb_ext.BidderSomoaudience):   syncConfig,
 			string(openrtb_ext.BidderSovrn):          syncConfig,
+			string(openrtb_ext.BidderStroeerCore):    syncConfig,
 			string(openrtb_ext.Bidder33Across):       syncConfig,
 			string(openrtb_ext.BidderSonobi):         syncConfig,
 			string(openrtb_ext.BidderYieldmo):        syncConfig,
