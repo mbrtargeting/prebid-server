@@ -1,0 +1,9 @@
+{
+  "stored_requests.filesystem" :true,
+  "cache.host": "localhost:2424",
+  "cache.scheme": "http",
+  "cache.query": "uuid=%PBS_CACHE_UUID%",
+  "port": 8003,
+  "external_url": "https://prebid-server.lsd.test",
+  "gdpr.usersync_if_ambiguous": true
+}
