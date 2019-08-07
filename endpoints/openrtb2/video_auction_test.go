@@ -54,7 +54,7 @@ func TestVideoEndpointImpressionsNumber(t *testing.T) {
 	assert.Len(t, resp.AdPods[3].Targeting, 1, "Incorrect Targeting data in response")
 	assert.Len(t, resp.AdPods[4].Targeting, 3, "Incorrect Targeting data in response")
 
-	assert.Equal(t, resp.AdPods[4].Targeting[0].Hb_pb_cat_dur, "20.00_395_30s", "Incorrect number of Ad Pods in response")
+	assert.Equal(t, resp.AdPods[4].Targeting[0].HbPbCatDur, "20.00_395_30s", "Incorrect number of Ad Pods in response")
 
 }
 
@@ -221,8 +221,8 @@ func TestVideoEndpointValidationsPositive(t *testing.T) {
 			RequireExactDuration: true,
 			Pods:                 pods,
 		},
-		App: openrtb.App{
-			Domain: "pbs.com",
+		App: &openrtb.App{
+			Bundle: "pbs.com",
 		},
 		IncludeBrandCategory: openrtb_ext.IncludeBrandCategory{
 			PrimaryAdserver: 1,
@@ -333,8 +333,8 @@ func TestVideoEndpointValidationsPodErrors(t *testing.T) {
 			RequireExactDuration: true,
 			Pods:                 pods,
 		},
-		App: openrtb.App{
-			Domain: "pbs.com",
+		App: &openrtb.App{
+			Bundle: "pbs.com",
 		},
 		IncludeBrandCategory: openrtb_ext.IncludeBrandCategory{
 			PrimaryAdserver: 1,
@@ -363,6 +363,119 @@ func TestVideoEndpointValidationsPodErrors(t *testing.T) {
 	assert.Equal(t, "request missing required field: PodConfig.Pods.PodId, Pod index: 3", podErrors[1].ErrMsgs[0], "Pod error ind 1 should have missed pod id")
 	assert.Equal(t, "request incorrect required field: PodConfig.Pods.AdPodDurationSec is negative, Pod index: 3", podErrors[1].ErrMsgs[1], "Pod error ind 1 should have negative AdPodDurationSec")
 	assert.Equal(t, "request missing or incorrect required field: PodConfig.Pods.ConfigId, Pod index: 3", podErrors[1].ErrMsgs[2], "Pod error ind 1 should have missing config id")
+}
+
+func TestVideoEndpointValidationsSiteAndApp(t *testing.T) {
+	ex := &mockExchangeVideo{}
+	deps := mockDeps(t, ex)
+	deps.cfg.VideoStoredRequestRequired = true
+
+	durationRange := make([]int, 0)
+	durationRange = append(durationRange, 15)
+	durationRange = append(durationRange, 30)
+
+	pods := make([]openrtb_ext.Pod, 0)
+	pod1 := openrtb_ext.Pod{
+		PodId:            1,
+		AdPodDurationSec: 30,
+		ConfigId:         "qwerty",
+	}
+	pod2 := openrtb_ext.Pod{
+		PodId:            2,
+		AdPodDurationSec: 30,
+		ConfigId:         "qwerty",
+	}
+	pods = append(pods, pod1)
+	pods = append(pods, pod2)
+
+	mimes := make([]string, 0)
+	mimes = append(mimes, "mp4")
+	mimes = append(mimes, "")
+
+	videoProtocols := make([]openrtb.Protocol, 0)
+	videoProtocols = append(videoProtocols, 15)
+	videoProtocols = append(videoProtocols, 30)
+
+	req := openrtb_ext.BidRequestVideo{
+		StoredRequestId: "123",
+		PodConfig: openrtb_ext.PodConfig{
+			DurationRangeSec:     durationRange,
+			RequireExactDuration: true,
+			Pods:                 pods,
+		},
+		App: &openrtb.App{
+			Bundle: "pbs.com",
+		},
+		Site: &openrtb.Site{
+			ID: "pbs.com",
+		},
+		IncludeBrandCategory: openrtb_ext.IncludeBrandCategory{
+			PrimaryAdserver: 1,
+		},
+		Video: openrtb_ext.SimplifiedVideo{
+			Mimes:     mimes,
+			Protocols: videoProtocols,
+		},
+	}
+
+	errors, podErrors := deps.validateVideoRequest(&req)
+	assert.Equal(t, "request.site or request.app must be defined, but not both", errors[0].Error(), "Site and App error should be present")
+	assert.Len(t, podErrors, 0, "Pod errors should be empty")
+}
+
+func TestVideoEndpointValidationsSiteMissingRequiredField(t *testing.T) {
+	ex := &mockExchangeVideo{}
+	deps := mockDeps(t, ex)
+	deps.cfg.VideoStoredRequestRequired = true
+
+	durationRange := make([]int, 0)
+	durationRange = append(durationRange, 15)
+	durationRange = append(durationRange, 30)
+
+	pods := make([]openrtb_ext.Pod, 0)
+	pod1 := openrtb_ext.Pod{
+		PodId:            1,
+		AdPodDurationSec: 30,
+		ConfigId:         "qwerty",
+	}
+	pod2 := openrtb_ext.Pod{
+		PodId:            2,
+		AdPodDurationSec: 30,
+		ConfigId:         "qwerty",
+	}
+	pods = append(pods, pod1)
+	pods = append(pods, pod2)
+
+	mimes := make([]string, 0)
+	mimes = append(mimes, "mp4")
+	mimes = append(mimes, "")
+
+	videoProtocols := make([]openrtb.Protocol, 0)
+	videoProtocols = append(videoProtocols, 15)
+	videoProtocols = append(videoProtocols, 30)
+
+	req := openrtb_ext.BidRequestVideo{
+		StoredRequestId: "123",
+		PodConfig: openrtb_ext.PodConfig{
+			DurationRangeSec:     durationRange,
+			RequireExactDuration: true,
+			Pods:                 pods,
+		},
+		Site: &openrtb.Site{
+			Domain: "pbs.com",
+		},
+		IncludeBrandCategory: openrtb_ext.IncludeBrandCategory{
+			PrimaryAdserver: 1,
+		},
+		Video: openrtb_ext.SimplifiedVideo{
+			Mimes:     mimes,
+			Protocols: videoProtocols,
+		},
+	}
+
+	errors, podErrors := deps.validateVideoRequest(&req)
+	assert.Equal(t, "request.site missing required field: id or page", errors[0].Error(), "Site required fields error should be present")
+	assert.Len(t, podErrors, 0, "Pod errors should be empty")
 }
 
 func TestVideoBuildVideoResponseMissedCacheForOneBid(t *testing.T) {
@@ -398,8 +511,8 @@ func TestVideoBuildVideoResponseMissedCacheForOneBid(t *testing.T) {
 	assert.NoError(t, err, "Should be no error")
 	assert.Len(t, bidRespVideo.AdPods, 1, "AdPods length should be 1")
 	assert.Len(t, bidRespVideo.AdPods[0].Targeting, 2, "AdPod Targeting length should be 2")
-	assert.Equal(t, "17.00_123_30s", bidRespVideo.AdPods[0].Targeting[0].Hb_pb_cat_dur, "AdPod Targeting first element hb_pb_cat_dur should be 17.00_123_30s")
-	assert.Equal(t, "17.00_456_30s", bidRespVideo.AdPods[0].Targeting[1].Hb_pb_cat_dur, "AdPod Targeting first element hb_pb_cat_dur should be 17.00_456_30s")
+	assert.Equal(t, "17.00_123_30s", bidRespVideo.AdPods[0].Targeting[0].HbPbCatDur, "AdPod Targeting first element hb_pb_cat_dur should be 17.00_123_30s")
+	assert.Equal(t, "17.00_456_30s", bidRespVideo.AdPods[0].Targeting[1].HbPbCatDur, "AdPod Targeting first element hb_pb_cat_dur should be 17.00_456_30s")
 }
 
 func TestVideoBuildVideoResponseMissedCacheForAllBids(t *testing.T) {
@@ -476,6 +589,52 @@ func TestVideoBuildVideoResponsePodErrors(t *testing.T) {
 	assert.Len(t, bidRespVideo.AdPods[0].Targeting, 2, "First ad pod should be correct and contain 2 targeting elements")
 	assert.Equal(t, int64(222), bidRespVideo.AdPods[1].PodId, "AdPods should contain error element at index 1")
 	assert.Equal(t, int64(333), bidRespVideo.AdPods[2].PodId, "AdPods should contain error element at index 2")
+}
+
+func TestVideoBuildVideoResponseNoBids(t *testing.T) {
+	openRtbBidResp := openrtb.BidResponse{}
+	podErrors := make([]PodError, 0, 0)
+	openRtbBidResp.SeatBid = make([]openrtb.SeatBid, 0)
+	bidRespVideo, err := buildVideoResponse(&openRtbBidResp, podErrors)
+	assert.NoError(t, err, "Error should be nil")
+	assert.Len(t, bidRespVideo.AdPods, 0, "AdPods length should be 0")
+}
+
+func TestMergeOpenRTBToVideoRequest(t *testing.T) {
+	var bidReq = &openrtb.BidRequest{}
+	var videoReq = &openrtb_ext.BidRequestVideo{}
+
+	videoReq.App = &openrtb.App{
+		Domain: "test.com",
+		Bundle: "test.bundle",
+	}
+
+	videoReq.Site = &openrtb.Site{
+		Page: "site.com/index",
+	}
+
+	var dnt int8 = 4
+	var lmt int8 = 5
+	videoReq.Device = openrtb.Device{
+		DNT: &dnt,
+		Lmt: &lmt,
+	}
+
+	videoReq.BCat = []string{"test1", "test2"}
+	videoReq.BAdv = []string{"test3", "test4"}
+
+	mergeData(videoReq, bidReq)
+
+	assert.Equal(t, videoReq.BCat, bidReq.BCat, "BCat is incorrect")
+	assert.Equal(t, videoReq.BAdv, bidReq.BAdv, "BAdv is incorrect")
+
+	assert.Equal(t, videoReq.App.Domain, bidReq.App.Domain, "App.Domain is incorrect")
+	assert.Equal(t, videoReq.App.Bundle, bidReq.App.Bundle, "App.Bundle is incorrect")
+
+	assert.Equal(t, videoReq.Device.Lmt, bidReq.Device.Lmt, "Device.Lmt is incorrect")
+	assert.Equal(t, videoReq.Device.DNT, bidReq.Device.DNT, "Device.DNT is incorrect")
+
+	assert.Equal(t, videoReq.Site.Page, bidReq.Site.Page, "Device.Site.Page is incorrect")
 }
 
 func mockDeps(t *testing.T, ex *mockExchangeVideo) *endpointDeps {

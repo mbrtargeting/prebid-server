@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/prebid/prebid-server/stored_requests"
-	"github.com/prebid/prebid-server/stored_requests/backends/file_fetcher"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -19,6 +17,8 @@ import (
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/currencies"
 	"github.com/prebid/prebid-server/prebid_cache_client"
+	"github.com/prebid/prebid-server/stored_requests"
+	"github.com/prebid/prebid-server/stored_requests/backends/file_fetcher"
 
 	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb"
@@ -218,7 +218,8 @@ func newRaceCheckingRequest(t *testing.T) *openrtb.BidRequest {
 			Ext:      json.RawMessage(`{"consent":"BONciguONcjGKADACHENAOLS1rAHDAFAAEAASABQAMwAeACEAFw","digitrust":{"id":"digi-id","keyv":1,"pref":1}}`),
 		},
 		Regs: &openrtb.Regs{
-			Ext: json.RawMessage(`{"gdpr":1}`),
+			COPPA: 1,
+			Ext:   json.RawMessage(`{"gdpr":1}`),
 		},
 		Imp: []openrtb.Imp{{
 			ID: "some-imp-id",
@@ -587,7 +588,7 @@ func TestCategoryMapping(t *testing.T) {
 
 	adapterBids[bidderName1] = &seatBid
 
-	bidCategory, adapterBids, err := applyCategoryMapping(requestExt, adapterBids, categoriesFetcher, targData)
+	bidCategory, adapterBids, err := applyCategoryMapping(nil, requestExt, adapterBids, categoriesFetcher, targData)
 
 	assert.Equal(t, nil, err, "Category mapping error should be empty")
 	assert.Equal(t, "10.00_Electronics_30s", bidCategory["bid_id1"], "Category mapping doesn't match")
@@ -652,7 +653,7 @@ func TestCategoryDedupe(t *testing.T) {
 
 		adapterBids[bidderName1] = &seatBid
 
-		bidCategory, adapterBids, err := applyCategoryMapping(requestExt, adapterBids, categoriesFetcher, targData)
+		bidCategory, adapterBids, err := applyCategoryMapping(nil, requestExt, adapterBids, categoriesFetcher, targData)
 
 		assert.Equal(t, nil, err, "Category mapping error should be empty")
 		assert.Equal(t, 2, len(adapterBids[bidderName1].bids), "Bidders number doesn't match")
@@ -731,7 +732,7 @@ type validatingBidder struct {
 	mockResponses map[string]bidderResponse
 }
 
-func (b *validatingBidder) requestBid(ctx context.Context, request *openrtb.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currencies.Conversions) (seatBid *pbsOrtbSeatBid, errs []error) {
+func (b *validatingBidder) requestBid(ctx context.Context, request *openrtb.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currencies.Conversions, reqInfo *adapters.ExtraRequestInfo) (seatBid *pbsOrtbSeatBid, errs []error) {
 	if expectedRequest, ok := b.expectations[string(name)]; ok {
 		if expectedRequest != nil {
 			if expectedRequest.BidAdjustment != bidAdjustment {
@@ -883,6 +884,6 @@ func (e *mockUsersync) GetId(bidder openrtb_ext.BidderName) (id string, exists b
 
 type panicingAdapter struct{}
 
-func (panicingAdapter) requestBid(ctx context.Context, request *openrtb.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currencies.Conversions) (posb *pbsOrtbSeatBid, errs []error) {
+func (panicingAdapter) requestBid(ctx context.Context, request *openrtb.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currencies.Conversions, reqInfo *adapters.ExtraRequestInfo) (posb *pbsOrtbSeatBid, errs []error) {
 	panic("Panic! Panic! The world is ending!")
 }
