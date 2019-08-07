@@ -66,10 +66,10 @@ func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, extern
 	return bidderResponse, errors
 }
 
-func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest) ([]*adapters.RequestData, []error) {
+func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	errors := make([]error, 0, len(internalRequest.Imp))
 
-	for idx, _ := range internalRequest.Imp {
+	for idx := range internalRequest.Imp {
 		imp := &internalRequest.Imp[idx]
 		var bidderExt adapters.ExtImpBidder
 		if err := json.Unmarshal(imp.Ext, &bidderExt); err != nil {
