@@ -19,7 +19,9 @@
         },
         "ext": {
           "bidder": {
-            "sid": "123456"
+            "sid": "123456",
+            "debugtoken": "jskslroi2jsdms.dksu^kdsksd"
+
           }
         }
       },
@@ -35,7 +37,8 @@
         },
         "ext": {
           "bidder": {
-            "sid": "85310"
+            "sid": "85310",
+            "debugtoken": "k0disdosdlmds.csijsd!#4hee"
           }
         }
       }
@@ -86,7 +89,8 @@
               },
               "ext": {
                 "bidder": {
-                  "sid": "123456"
+                  "sid": "123456",
+                  "debugtoken": "jskslroi2jsdms.dksu^kdsksd"
                 }
               }
             },
@@ -103,7 +107,8 @@
               },
               "ext": {
                 "bidder": {
-                  "sid": "85310"
+                  "sid": "85310",
+                  "debugtoken": "k0disdosdlmds.csijsd!#4hee"
                 }
               }
             }
