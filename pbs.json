@@ -1,5 +1,11 @@
 {
   "stored_requests.filesystem" :true,
+  "stored_requests": {
+    "http": {
+      "endpoint": "http://localhost:8004/fetch-stored-requests",
+      "amp_endpoint": "http://localhost:8004/fetch-stored-requests"
+    }
+  },
   "cache.host": "localhost:2424",
   "cache.scheme": "http",
   "cache.query": "uuid=%PBS_CACHE_UUID%",
