@@ -33,7 +33,7 @@ import (
 	"golang.org/x/net/publicsuffix"
 )
 
-const storedRequestTimeoutMillis = 50
+const storedRequestTimeoutMillis = 2000
 
 func NewEndpoint(ex exchange.Exchange, validator openrtb_ext.BidderParamValidator, requestsById stored_requests.Fetcher, categories stored_requests.CategoryFetcher, cfg *config.Configuration, met pbsmetrics.MetricsEngine, pbsAnalytics analytics.PBSAnalyticsModule, disabledBidders map[string]string, defReqJSON []byte, bidderMap map[string]openrtb_ext.BidderName) (httprouter.Handle, error) {
 
