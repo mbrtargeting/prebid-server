@@ -7,6 +7,7 @@ import (
 	"github.com/golang/glog"
 	//ttx "github.com/prebid/prebid-server/adapters/33across"
 	//"github.com/prebid/prebid-server/adapters/adform"
+	//"github.com/prebid/prebid-server/adapters/adkernel"
 	//"github.com/prebid/prebid-server/adapters/adkernelAdn"
 	//"github.com/prebid/prebid-server/adapters/adtelligent"
 	//"github.com/prebid/prebid-server/adapters/advangelists"
@@ -36,6 +37,7 @@ import (
 	//"github.com/prebid/prebid-server/adapters/sonobi"
 	//"github.com/prebid/prebid-server/adapters/sovrn"
 	"github.com/prebid/prebid-server/adapters/stroeercore"
+	//"github.com/prebid/prebid-server/adapters/triplelift"
 	//"github.com/prebid/prebid-server/adapters/unruly"
 	//"github.com/prebid/prebid-server/adapters/verizonmedia"
 	//"github.com/prebid/prebid-server/adapters/visx"
@@ -54,6 +56,7 @@ func NewSyncerMap(cfg *config.Configuration) map[openrtb_ext.BidderName]usersync
 
 	//insertIntoMap(cfg, syncers, openrtb_ext.Bidder33Across, ttx.New33AcrossSyncer)
 	//insertIntoMap(cfg, syncers, openrtb_ext.BidderAdform, adform.NewAdformSyncer)
+	//insertIntoMap(cfg, syncers, openrtb_ext.BidderAdkernel, adkernel.NewAdkernelSyncer)
 	//insertIntoMap(cfg, syncers, openrtb_ext.BidderAdkernelAdn, adkernelAdn.NewAdkernelAdnSyncer)
 	//insertIntoMap(cfg, syncers, openrtb_ext.BidderAdtelligent, adtelligent.NewAdtelligentSyncer)
 	//insertIntoMap(cfg, syncers, openrtb_ext.BidderAdvangelists, advangelists.NewAdvangelistsSyncer)
@@ -81,6 +84,7 @@ func NewSyncerMap(cfg *config.Configuration) map[openrtb_ext.BidderName]usersync
 	//insertIntoMap(cfg, syncers, openrtb_ext.BidderSovrn, sovrn.NewSovrnSyncer)
 	//insertIntoMap(cfg, syncers, openrtb_ext.BidderSonobi, sonobi.NewSonobiSyncer)
 	insertIntoMap(cfg, syncers, openrtb_ext.BidderStroeerCore, stroeercore.NewStroeerCoreSyncer)
+	//insertIntoMap(cfg, syncers, openrtb_ext.BidderTriplelift, triplelift.NewTripleliftSyncer)
 	//insertIntoMap(cfg, syncers, openrtb_ext.BidderVrtcal, vrtcal.NewVrtcalSyncer)
 	//insertIntoMap(cfg, syncers, openrtb_ext.BidderYieldmo, yieldmo.NewYieldmoSyncer)
 	//insertIntoMap(cfg, syncers, openrtb_ext.BidderVisx, visx.NewVisxSyncer)

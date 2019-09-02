@@ -21,6 +21,7 @@ type BidderName string
 // Please keep these (and the BidderMap) alphabetized to minimize merge conflicts among adapter submissions.
 const (
 	Bidder33Across       BidderName = "33across"
+	BidderAdkernel       BidderName = "adkernel"
 	BidderAdkernelAdn    BidderName = "adkernelAdn"
 	BidderAdtelligent    BidderName = "adtelligent"
 	BidderAdform         BidderName = "adform"
@@ -51,6 +52,7 @@ const (
 	BidderSovrn          BidderName = "sovrn"
 	BidderSonobi         BidderName = "sonobi"
 	BidderStroeerCore    BidderName = "stroeerCore"
+	BidderTriplelift     BidderName = "triplelift"
 	BidderUnruly         BidderName = "unruly"
 	BidderVerizonMedia   BidderName = "verizonmedia"
 	BidderVrtcal         BidderName = "vrtcal"
@@ -62,6 +64,7 @@ const (
 // BidderMap stores all the valid OpenRTB 2.x Bidders in the project. This map *must not* be mutated.
 var BidderMap = map[string]BidderName{
 	"33across":        Bidder33Across,
+	"adkernel":        BidderAdkernel,
 	"adkernelAdn":     BidderAdkernelAdn,
 	"adtelligent":     BidderAdtelligent,
 	"adform":          BidderAdform,
@@ -92,6 +95,7 @@ var BidderMap = map[string]BidderName{
 	"sovrn":           BidderSovrn,
 	"sonobi":          BidderSonobi,
 	"stroeerCore":     BidderStroeerCore,
+	"triplelift":      BidderTriplelift,
 	"unruly":          BidderUnruly,
 	"verizonmedia":    BidderVerizonMedia,
 	"vrtcal":          BidderVrtcal,

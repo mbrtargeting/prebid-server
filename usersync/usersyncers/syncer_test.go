@@ -15,6 +15,7 @@ func TestNewSyncerMap(t *testing.T) {
 	cfg := &config.Configuration{
 		Adapters: map[string]config.Adapter{
 			string(openrtb_ext.BidderAdform):         syncConfig,
+			string(openrtb_ext.BidderAdkernel):       syncConfig,
 			string(openrtb_ext.BidderAdkernelAdn):    syncConfig,
 			string(openrtb_ext.BidderAdtelligent):    syncConfig,
 			string(openrtb_ext.BidderAdvangelists):   syncConfig,
@@ -42,6 +43,7 @@ func TestNewSyncerMap(t *testing.T) {
 			string(openrtb_ext.BidderSomoaudience):   syncConfig,
 			string(openrtb_ext.BidderSovrn):          syncConfig,
 			string(openrtb_ext.BidderStroeerCore):    syncConfig,
+			string(openrtb_ext.BidderTriplelift):     syncConfig,
 			string(openrtb_ext.Bidder33Across):       syncConfig,
 			string(openrtb_ext.BidderSonobi):         syncConfig,
 			string(openrtb_ext.BidderVrtcal):         syncConfig,
