@@ -60,7 +60,7 @@ const (
 	BidderSomoaudience     BidderName = "somoaudience"
 	BidderSonobi           BidderName = "sonobi"
 	BidderSovrn            BidderName = "sovrn"
-	BidderStroeerCore    BidderName = "stroeerCore"
+	BidderStroeerCore      BidderName = "stroeerCore"
 	BidderSynacormedia     BidderName = "synacormedia"
 	BidderTappx            BidderName = "tappx"
 	BidderTriplelift       BidderName = "triplelift"

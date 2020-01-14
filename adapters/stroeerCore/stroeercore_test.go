@@ -1,4 +1,4 @@
-package stroeercore
+package stroeerCore
 
 import (
 	"github.com/prebid/prebid-server/adapters/adapterstest"

@@ -1,4 +1,4 @@
-package stroeercore
+package stroeerCore
 
 import (
 	"encoding/json"
