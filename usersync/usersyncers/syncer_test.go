@@ -77,6 +77,11 @@ func TestNewSyncerMap(t *testing.T) {
 
 	syncers := NewSyncerMap(cfg)
 	for _, bidderName := range openrtb_ext.BidderMap {
+
+		if bidderName != "stroeerCore" {
+			continue
+		}
+
 		_, adapterWithoutSyncer := adaptersWithoutSyncers[bidderName]
 		if _, ok := syncers[bidderName]; !ok && !adapterWithoutSyncer {
 			t.Errorf("No syncer exists for adapter: %s", bidderName)
