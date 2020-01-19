@@ -1,5 +1,5 @@
 {
-  "stored_requests.filesystem" :true,
+  "stored_requests.filesystem": true,
   "stored_requests": {
     "http": {
       "endpoint": "http://localhost:8004/fetch-stored-requests",
@@ -12,5 +12,157 @@
   "port": 8003,
   "external_url": "https://prebid-server.lsd.test",
   "gdpr.usersync_if_ambiguous": true,
-  "cache.default_ttl_seconds.banner" : 3000
+  "cache.default_ttl_seconds.banner": 3000,
+  "adapters": {
+    "audiencenetwork": {
+      "disabled": true
+    },
+    "33across": {
+      "disabled": true
+    },
+    "adform": {
+      "disabled": true
+    },
+    "adkernel": {
+      "disabled": false
+    },
+    "adkerneladn": {
+      "disabled": true
+    },
+    "adpone": {
+      "disabled": true
+    },
+    "adtelligent": {
+      "disabled": true
+    },
+    "advangelists": {
+      "disabled": true
+    },
+    "applogy": {
+      "disabled": true
+    },
+    "appnexus": {
+      "disabled": true
+    },
+    "beachfront": {
+      "disabled": true
+    },
+    "brightroll": {
+      "disabled": true
+    },
+    "consumable": {
+      "disabled": true
+    },
+    "conversant": {
+      "disabled": true
+    },
+    "datablocks": {
+      "disabled": true
+    },
+    "emx_digital": {
+      "disabled": true
+    },
+    "engagebdr": {
+      "disabled": true
+    },
+    "eplanning": {
+      "disabled": true
+    },
+    "gamma": {
+      "disabled": true
+    },
+    "gamoshi": {
+      "disabled": true
+    },
+    "grid": {
+      "disabled": true
+    },
+    "gumgum": {
+      "disabled": true
+    },
+    "improvedigital": {
+      "disabled": true
+    },
+    "ix": {
+      "disabled": true
+    },
+    "kubient": {
+      "disabled": true
+    },
+    "lifestreet": {
+      "disabled": true
+    },
+    "lockerdome": {
+      "disabled": true
+    },
+    "marsmedia": {
+      "disabled": true
+    },
+    "mgid": {
+      "disabled": true
+    },
+    "openx": {
+      "disabled": true
+    },
+    "pubmatic": {
+      "disabled": true
+    },
+    "pubnative": {
+      "disabled": true
+    },
+    "pulsepoint": {
+      "disabled": true
+    },
+    "rhythmone": {
+      "disabled": true
+    },
+    "rtbhouse": {
+      "disabled": true
+    },
+    "rubicon": {
+      "disabled": true
+    },
+    "sharethrough": {
+      "disabled": true
+    },
+    "somoaudience": {
+      "disabled": true
+    },
+    "sonobi": {
+      "disabled": true
+    },
+    "sovrn": {
+      "disabled": true
+    },
+    "stroeercore": {
+      "disabled": false
+    },
+    "synacormedia": {
+      "disabled": true
+    },
+    "tappx": {
+      "disabled": true
+    },
+    "triplelift_native": {
+      "disabled": true
+    },
+    "triplelift": {
+      "disabled": true
+    },
+    "unruly": {
+      "disabled": true
+    },
+    "verizonmedia": {
+      "disabled": true
+    },
+    "visx": {
+      "disabled": true
+    },
+    "vrtcal": {
+      "disabled": true
+    },
+    "yieldmo": {
+      "disabled": true
+    }
+  }
 }
