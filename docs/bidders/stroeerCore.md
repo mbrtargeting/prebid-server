@@ -1,6 +1,6 @@
-#StroeerCore Adapter
+# StroeerCore Adapter
 
-#Setup
+# Setup
 
 This document serves as a reminder of what to do when installing this adapter.
 
