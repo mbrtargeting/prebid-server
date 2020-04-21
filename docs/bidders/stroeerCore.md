@@ -127,31 +127,26 @@ In the AMP environment, user syncing on the page will look like this:
 </html>
 ```
 
-### EUR currency setup
+### Currency setup
 
-Be sure the resolved request will have EUR as the first currency on the list.
+Stroeer prebid server uses EUR as the currency.
+
+Be sure the resolved request will have EUR as the only currency on the list.
 To make this happen, be sure `cur` is on your stored request. Otherwise USD will be used as the default.
 
 Example setup:
 ```
 {
     "id": "auction-id",
-    "cur": ["EUR", "USD"]
+    "cur": ["EUR"]
     ...
 }
 ```
 
 The conversion file used by prebid server is https://cdn.jsdelivr.net/gh/prebid/currency-file@1/latest.json
 
-This file contains two top-level lookup keys: USD and GDP. This means the currency can only be converted _from_ USD or GDP.
-
-It may seem that a change to this file is required to support EUR. This is not the case.
-
-With the example setup above, EUR responses will require no conversion since EUR is on the request. No lookup is required
-when converting from EUR to EUR. The conversion rate here is 1.
-
-However, we want to support bidders that only bid in USD. Hence we put USD on the request. Based on the json file, 
-prebid server can convert _from_ USD _to_ the first (or most preferred) currency on the request: EUR.
+Bidders are not required to bid in EUR despite the resolved request having "EUR" as the currency. All Non-EUR bids will
+be converted using the rates (or derived rates) from the conversion file.
 
 ### Prebid config setup
 
