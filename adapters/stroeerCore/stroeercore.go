@@ -3,7 +3,7 @@ package stroeerCore
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mxmCherry/openrtb"
+	"github.com/mxmCherry/openrtb/v14/openrtb2"
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/errortypes"
@@ -23,13 +23,13 @@ type StroeerBidResponse struct {
 	Id     string  `json:"id"`
 	BidId  string  `json:"bidId"`
 	Cpm    float64 `json:"cpm"`
-	Width  uint64  `json:"width"`
-	Height uint64  `json:"height"`
+	Width  int64   `json:"width"`
+	Height int64   `json:"height"`
 	Ad     string  `json:"ad"`
 	CrId   string  `json:"crid"`
 }
 
-func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	if response.StatusCode != http.StatusOK {
 		return nil, []error{&errortypes.BadServerResponse{
 			Message: fmt.Sprintf("Unexpected http status code: %d.", response.StatusCode),
@@ -48,7 +48,7 @@ func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, extern
 	bidderResponse.Currency = "EUR"
 
 	for _, bid := range stroeerResponse.Bids {
-		openRtbBid := openrtb.Bid{
+		openRtbBid := openrtb2.Bid{
 			ID:    bid.Id,
 			ImpID: bid.BidId,
 			W:     bid.Width,
@@ -67,7 +67,7 @@ func (a *StroeerCoreBidder) MakeBids(internalRequest *openrtb.BidRequest, extern
 	return bidderResponse, errors
 }
 
-func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
+func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb2.BidRequest, reqInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
 	errors := make([]error, 0, len(internalRequest.Imp))
 
 	for idx := range internalRequest.Imp {
@@ -89,7 +89,7 @@ func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb.BidRequest, re
 
 	if internalRequest.Device != nil {
 		if internalRequest.Device.Geo != nil {
-			internalRequest.Device.Geo.Type = openrtb.LocationType(1)
+			internalRequest.Device.Geo.Type = openrtb2.LocationType(1)
 		}
 	}
 

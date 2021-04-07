@@ -8,5 +8,5 @@ import (
 )
 
 func NewStroeerCoreSyncer(temp *template.Template) usersync.Usersyncer {
-	return adapters.NewSyncer("stroeerCore", 136, temp, adapters.SyncTypeIframe)
+	return adapters.NewSyncer("stroeerCore", temp, adapters.SyncTypeIframe)
 }

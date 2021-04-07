@@ -21,7 +21,6 @@ func TestStroeerCoreSyncer(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "http://js.lsd.test/pbsync.html?gdpr=1&gdpr_consent=ABCDEF&redirect=http%3A%2F%2Fprebidserver.com%2Fsetuid%3Fbidder%3DstroeerCore%26gdpr%3D1%26gdpr_consent%3DABCDEF%26uid%3D", syncInfo.URL)
 	assert.Equal(t, "iframe", syncInfo.Type)
-	assert.EqualValues(t, 136, syncer.GDPRVendorID())
 	assert.Equal(t, false, syncInfo.SupportCORS)
 	assert.Equal(t, "stroeerCore", syncer.FamilyName())
 }
