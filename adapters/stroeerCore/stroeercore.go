@@ -87,9 +87,14 @@ func (b *StroeerCoreBidder) MakeRequests(internalRequest *openrtb2.BidRequest, r
 		imp.TagID = stroeerExt.Sid
 	}
 
-	if internalRequest.Device != nil {
-		if internalRequest.Device.Geo != nil {
-			internalRequest.Device.Geo.Type = openrtb2.LocationType(1)
+	device := internalRequest.Device
+	if device != nil {
+		if device.Geo != nil && device.Geo.Type == 0 {
+			geoCopy := *internalRequest.Device.Geo
+			geoCopy.Type = openrtb2.LocationTypeGPSLocationServices
+			deviceCopy := *internalRequest.Device
+			deviceCopy.Geo = &geoCopy
+			internalRequest.Device = &deviceCopy
 		}
 	}
 
