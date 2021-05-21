@@ -103,6 +103,7 @@ const (
 	BidderBeintoo           BidderName = "beintoo"
 	BidderBetween           BidderName = "between"
 	BidderBidmachine        BidderName = "bidmachine"
+	BidderBidsCube          BidderName = "bidscube"
 	BidderBrightroll        BidderName = "brightroll"
 	BidderColossus          BidderName = "colossus"
 	BidderConnectAd         BidderName = "connectad"
@@ -128,6 +129,7 @@ const (
 	BidderInvibes           BidderName = "invibes"
 	BidderIx                BidderName = "ix"
 	BidderJixie             BidderName = "jixie"
+	BidderKayzen            BidderName = "kayzen"
 	BidderKidoz             BidderName = "kidoz"
 	BidderKrushmedia        BidderName = "krushmedia"
 	BidderKubient           BidderName = "kubient"
@@ -135,6 +137,7 @@ const (
 	BidderLockerDome        BidderName = "lockerdome"
 	BidderLogicad           BidderName = "logicad"
 	BidderLunaMedia         BidderName = "lunamedia"
+	BidderMadvertise        BidderName = "madvertise"
 	BidderMarsmedia         BidderName = "marsmedia"
 	BidderMediafuse         BidderName = "mediafuse"
 	BidderMgid              BidderName = "mgid"
@@ -177,6 +180,7 @@ const (
 	BidderValueImpression   BidderName = "valueimpression"
 	BidderVerizonMedia      BidderName = "verizonmedia"
 	BidderVisx              BidderName = "visx"
+	BidderViewdeos          BidderName = "viewdeos"
 	BidderVrtcal            BidderName = "vrtcal"
 	BidderYeahmobi          BidderName = "yeahmobi"
 	BidderYieldlab          BidderName = "yieldlab"
@@ -218,6 +222,7 @@ func CoreBidderNames() []BidderName {
 		BidderBeintoo,
 		BidderBetween,
 		BidderBidmachine,
+		BidderBidsCube,
 		BidderBrightroll,
 		BidderColossus,
 		BidderConnectAd,
@@ -243,6 +248,7 @@ func CoreBidderNames() []BidderName {
 		BidderInvibes,
 		BidderIx,
 		BidderJixie,
+		BidderKayzen,
 		BidderKidoz,
 		BidderKrushmedia,
 		BidderKubient,
@@ -250,6 +256,7 @@ func CoreBidderNames() []BidderName {
 		BidderLockerDome,
 		BidderLogicad,
 		BidderLunaMedia,
+		BidderMadvertise,
 		BidderMarsmedia,
 		BidderMediafuse,
 		BidderMgid,
@@ -291,6 +298,7 @@ func CoreBidderNames() []BidderName {
 		BidderUnruly,
 		BidderValueImpression,
 		BidderVerizonMedia,
+		BidderViewdeos,
 		BidderVisx,
 		BidderVrtcal,
 		BidderYeahmobi,
