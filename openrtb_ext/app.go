@@ -10,6 +10,12 @@ type ExtApp struct {
 // They are optional with no current constraints on value, so we don't need a custom
 // UnmarshalJSON() method at this time.
 type ExtAppPrebid struct {
-	Source  string `json:"source"`
-	Version string `json:"version"`
+	Source  string     `json:"source"`
+	Version string     `json:"version"`
+	Data    ExtAppData `json:"data"`
+}
+
+// ExtAppData contains custom targeting fields. Each field will be an array of strings.
+type ExtAppData struct {
+	AndroidYlSdkVersion []string `json:"androidYlSdkVersion"`
 }
