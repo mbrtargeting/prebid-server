@@ -75,6 +75,7 @@ func IsBidderNameReserved(name string) bool {
 const (
 	Bidder33Across          BidderName = "33across"
 	BidderAcuityAds         BidderName = "acuityads"
+	BidderAdagio            BidderName = "adagio"
 	BidderAdf               BidderName = "adf"
 	BidderAdform            BidderName = "adform"
 	BidderAdgeneration      BidderName = "adgeneration"
@@ -94,16 +95,20 @@ const (
 	BidderAdxcg             BidderName = "adxcg"
 	BidderAdyoulike         BidderName = "adyoulike"
 	BidderAJA               BidderName = "aja"
+	BidderAlgorix           BidderName = "algorix"
 	BidderAMX               BidderName = "amx"
 	BidderApplogy           BidderName = "applogy"
 	BidderAppnexus          BidderName = "appnexus"
 	BidderAudienceNetwork   BidderName = "audienceNetwork"
 	BidderAvocet            BidderName = "avocet"
+	BidderAxonix            BidderName = "axonix"
 	BidderBeachfront        BidderName = "beachfront"
 	BidderBeintoo           BidderName = "beintoo"
 	BidderBetween           BidderName = "between"
 	BidderBidmachine        BidderName = "bidmachine"
+	BidderBidmyadz          BidderName = "bidmyadz"
 	BidderBidsCube          BidderName = "bidscube"
+	BidderBmtm              BidderName = "bmtm"
 	BidderBrightroll        BidderName = "brightroll"
 	BidderColossus          BidderName = "colossus"
 	BidderConnectAd         BidderName = "connectad"
@@ -119,24 +124,27 @@ const (
 	BidderEngageBDR         BidderName = "engagebdr"
 	BidderEPlanning         BidderName = "eplanning"
 	BidderEpom              BidderName = "epom"
+	BidderEVolution         BidderName = "e_volution"
 	BidderGamma             BidderName = "gamma"
 	BidderGamoshi           BidderName = "gamoshi"
 	BidderGrid              BidderName = "grid"
 	BidderGumGum            BidderName = "gumgum"
+	BidderHuaweiAds         BidderName = "huaweiads"
 	BidderImprovedigital    BidderName = "improvedigital"
 	BidderInMobi            BidderName = "inmobi"
 	BidderInteractiveoffers BidderName = "interactiveoffers"
 	BidderInvibes           BidderName = "invibes"
+	BidderIQZone            BidderName = "iqzone"
 	BidderIx                BidderName = "ix"
 	BidderJixie             BidderName = "jixie"
 	BidderKayzen            BidderName = "kayzen"
 	BidderKidoz             BidderName = "kidoz"
 	BidderKrushmedia        BidderName = "krushmedia"
 	BidderKubient           BidderName = "kubient"
-	BidderLifestreet        BidderName = "lifestreet"
 	BidderLockerDome        BidderName = "lockerdome"
 	BidderLogicad           BidderName = "logicad"
 	BidderLunaMedia         BidderName = "lunamedia"
+	BidderSaLunaMedia       BidderName = "sa_lunamedia"
 	BidderMadvertise        BidderName = "madvertise"
 	BidderMarsmedia         BidderName = "marsmedia"
 	BidderMediafuse         BidderName = "mediafuse"
@@ -148,6 +156,7 @@ const (
 	BidderNoBid             BidderName = "nobid"
 	BidderOneTag            BidderName = "onetag"
 	BidderOpenx             BidderName = "openx"
+	BidderOperaads          BidderName = "operaads"
 	BidderOrbidder          BidderName = "orbidder"
 	BidderOutbrain          BidderName = "outbrain"
 	BidderPangle            BidderName = "pangle"
@@ -162,8 +171,10 @@ const (
 	BidderSilverMob         BidderName = "silvermob"
 	BidderSmaato            BidderName = "smaato"
 	BidderSmartAdserver     BidderName = "smartadserver"
+	BidderSmartHub          BidderName = "smarthub"
 	BidderSmartRTB          BidderName = "smartrtb"
 	BidderSmartyAds         BidderName = "smartyads"
+	BidderSmileWanted       BidderName = "smilewanted"
 	BidderSomoaudience      BidderName = "somoaudience"
 	BidderSonobi            BidderName = "sonobi"
 	BidderSovrn             BidderName = "sovrn"
@@ -194,6 +205,7 @@ func CoreBidderNames() []BidderName {
 	return []BidderName{
 		Bidder33Across,
 		BidderAcuityAds,
+		BidderAdagio,
 		BidderAdf,
 		BidderAdform,
 		BidderAdgeneration,
@@ -213,16 +225,20 @@ func CoreBidderNames() []BidderName {
 		BidderAdxcg,
 		BidderAdyoulike,
 		BidderAJA,
+		BidderAlgorix,
 		BidderAMX,
 		BidderApplogy,
 		BidderAppnexus,
 		BidderAudienceNetwork,
 		BidderAvocet,
+		BidderAxonix,
 		BidderBeachfront,
 		BidderBeintoo,
 		BidderBetween,
 		BidderBidmachine,
+		BidderBidmyadz,
 		BidderBidsCube,
+		BidderBmtm,
 		BidderBrightroll,
 		BidderColossus,
 		BidderConnectAd,
@@ -238,24 +254,27 @@ func CoreBidderNames() []BidderName {
 		BidderEngageBDR,
 		BidderEPlanning,
 		BidderEpom,
+		BidderEVolution,
 		BidderGamma,
 		BidderGamoshi,
 		BidderGrid,
 		BidderGumGum,
+		BidderHuaweiAds,
 		BidderImprovedigital,
 		BidderInMobi,
 		BidderInteractiveoffers,
 		BidderInvibes,
+		BidderIQZone,
 		BidderIx,
 		BidderJixie,
 		BidderKayzen,
 		BidderKidoz,
 		BidderKrushmedia,
 		BidderKubient,
-		BidderLifestreet,
 		BidderLockerDome,
 		BidderLogicad,
 		BidderLunaMedia,
+		BidderSaLunaMedia,
 		BidderMadvertise,
 		BidderMarsmedia,
 		BidderMediafuse,
@@ -267,6 +286,7 @@ func CoreBidderNames() []BidderName {
 		BidderNoBid,
 		BidderOneTag,
 		BidderOpenx,
+		BidderOperaads,
 		BidderOrbidder,
 		BidderOutbrain,
 		BidderPangle,
@@ -281,8 +301,10 @@ func CoreBidderNames() []BidderName {
 		BidderSilverMob,
 		BidderSmaato,
 		BidderSmartAdserver,
+		BidderSmartHub,
 		BidderSmartRTB,
 		BidderSmartyAds,
+		BidderSmileWanted,
 		BidderSomoaudience,
 		BidderSonobi,
 		BidderSovrn,

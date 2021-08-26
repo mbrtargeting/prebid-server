@@ -128,11 +128,13 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		cacheTTL = int64(deps.cfg.CacheURL.DefaultTTLs.Video)
 	}
 	debugLog := exchange.DebugLog{
-		Enabled:   strings.EqualFold(debugQuery, "true"),
-		CacheType: prebid_cache_client.TypeXML,
-		TTL:       cacheTTL,
-		Regexp:    deps.debugLogRegexp,
+		Enabled:       strings.EqualFold(debugQuery, "true"),
+		CacheType:     prebid_cache_client.TypeXML,
+		TTL:           cacheTTL,
+		Regexp:        deps.debugLogRegexp,
+		DebugOverride: exchange.IsDebugOverrideEnabled(r.Header.Get(exchange.DebugOverrideHeader), deps.cfg.Debug.OverrideToken),
 	}
+	debugLog.DebugEnabledOrOverridden = debugLog.Enabled || debugLog.DebugOverride
 
 	defer func() {
 		if len(debugLog.CacheKey) > 0 && vo.VideoResponse == nil {
@@ -157,7 +159,7 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 	}
 
 	resolvedRequest := requestJson
-	if debugLog.Enabled {
+	if debugLog.DebugEnabledOrOverridden {
 		debugLog.Data.Request = string(requestJson)
 		if headerBytes, err := json.Marshal(r.Header); err == nil {
 			debugLog.Data.Headers = string(headerBytes)
@@ -209,7 +211,7 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 	//create full open rtb req from full video request
 	mergeData(videoBidReq, bidReq)
 	// If debug query param is set, force the response to enable test flag
-	if debugLog.Enabled {
+	if debugLog.DebugEnabledOrOverridden {
 		bidReq.Test = 1
 	}
 
@@ -239,7 +241,7 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 	// Populate any "missing" OpenRTB fields with info from other sources, (e.g. HTTP request headers).
 	deps.setFieldsImplicitly(r, bidReq) // move after merge
 
-	errL = deps.validateRequest(bidReq)
+	errL = deps.validateRequest(&openrtb_ext.RequestWrapper{BidRequest: bidReq})
 	if errortypes.ContainsFatalError(errL) {
 		handleError(&labels, w, errL, &vo, &debugLog)
 		return
@@ -253,16 +255,16 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		defer cancel()
 	}
 
-	usersyncs := usersync.ParsePBSCookieFromRequest(r, &(deps.cfg.HostCookie))
+	usersyncs := usersync.ParseCookieFromRequest(r, &(deps.cfg.HostCookie))
 	if bidReq.App != nil {
 		labels.Source = metrics.DemandApp
 		labels.PubID = getAccountID(bidReq.App.Publisher)
 	} else { // both bidReq.App == nil and bidReq.Site != nil are true
 		labels.Source = metrics.DemandWeb
-		if usersyncs.LiveSyncCount() == 0 {
-			labels.CookieFlag = metrics.CookieFlagNo
-		} else {
+		if usersyncs.HasAnyLiveSyncs() {
 			labels.CookieFlag = metrics.CookieFlagYes
+		} else {
+			labels.CookieFlag = metrics.CookieFlagNo
 		}
 		labels.PubID = getAccountID(bidReq.Site.Publisher)
 	}
@@ -306,7 +308,7 @@ func (deps *endpointDeps) VideoAuctionEndpoint(w http.ResponseWriter, r *http.Re
 		bidResp.Ext = response.Ext
 	}
 
-	if len(bidResp.AdPods) == 0 && debugLog.Enabled {
+	if len(bidResp.AdPods) == 0 && debugLog.DebugEnabledOrOverridden {
 		err := debugLog.PutDebugLogError(deps.cache, deps.cfg.CacheURL.ExpectedTimeMillis, vo.Errors)
 		if err != nil {
 			vo.Errors = append(vo.Errors, err)
@@ -344,7 +346,7 @@ func cleanupVideoBidRequest(videoReq *openrtb_ext.BidRequestVideo, podErrors []P
 }
 
 func handleError(labels *metrics.Labels, w http.ResponseWriter, errL []error, vo *analytics.VideoObject, debugLog *exchange.DebugLog) {
-	if debugLog != nil && debugLog.Enabled {
+	if debugLog != nil && debugLog.DebugEnabledOrOverridden {
 		if rawUUID, err := uuid.NewV4(); err == nil {
 			debugLog.CacheKey = rawUUID.String()
 		}

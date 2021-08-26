@@ -11,16 +11,15 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/prebid/prebid-server/analytics"
-	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
-
 	analyticsConf "github.com/prebid/prebid-server/analytics/config"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/exchange"
-	"github.com/prebid/prebid-server/metrics"
+	metricsConfig "github.com/prebid/prebid-server/metrics/config"
 	"github.com/prebid/prebid-server/openrtb_ext"
-	gometrics "github.com/rcrowley/go-metrics"
+	"github.com/prebid/prebid-server/stored_requests/backends/empty_fetcher"
+
+	"github.com/mxmCherry/openrtb/v15/openrtb2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,22 +31,19 @@ func TestGoodAmpRequests(t *testing.T) {
 	goodRequests := map[string]json.RawMessage{
 		"1": json.RawMessage(validRequest(t, "aliased-buyeruids.json")),
 		"2": json.RawMessage(validRequest(t, "aliases.json")),
-		"4": json.RawMessage(validRequest(t, "digitrust.json")),
 		"5": json.RawMessage(validRequest(t, "gdpr-no-consentstring.json")),
 		"6": json.RawMessage(validRequest(t, "gdpr.json")),
 		"7": json.RawMessage(validRequest(t, "site.json")),
 		"9": json.RawMessage(validRequest(t, "user.json")),
 	}
 
-	// NewMetrics() will create a new go_metrics MetricsEngine, bypassing the need for a crafted configuration set to support it.
-	// As a side effect this gives us some coverage of the go_metrics piece of the metrics engine.
 	endpoint, _ := NewAmpEndpoint(
 		&mockAmpExchange{},
 		newParamsValidator(t),
 		&mockAmpStoredReqFetcher{goodRequests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
-		newTestMetrics(),
+		&metricsConfig.DummyMetricsEngine{},
 		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 		map[string]string{},
 		[]byte{},
@@ -67,6 +63,7 @@ func TestGoodAmpRequests(t *testing.T) {
 
 		var response AmpResponse
 		if err := json.Unmarshal(recorder.Body.Bytes(), &response); err != nil {
+			t.Errorf("AMP response was: %s", recorder.Body.Bytes())
 			t.Fatalf("Error unmarshalling response: %s", err.Error())
 		}
 
@@ -99,7 +96,7 @@ func TestAMPPageInfo(t *testing.T) {
 		&mockAmpStoredReqFetcher{stored},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
-		newTestMetrics(),
+		&metricsConfig.DummyMetricsEngine{},
 		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 		map[string]string{},
 		[]byte{},
@@ -122,11 +119,6 @@ func TestAMPPageInfo(t *testing.T) {
 func TestGDPRConsent(t *testing.T) {
 	consent := "BOu5On0Ou5On0ADACHENAO7pqzAAppY"
 	existingConsent := "BONV8oqONXwgmADACHENAO7pqzAAppY"
-	digitrust := &openrtb_ext.ExtUserDigiTrust{
-		ID:   "anyDigitrustID",
-		KeyV: 1,
-		Pref: 0,
-	}
 
 	testCases := []struct {
 		description     string
@@ -165,12 +157,10 @@ func TestGDPRConsent(t *testing.T) {
 			description: "Overrides Existing Consent - With Sibling Data",
 			consent:     consent,
 			userExt: &openrtb_ext.ExtUser{
-				Consent:   existingConsent,
-				DigiTrust: digitrust,
+				Consent: existingConsent,
 			},
 			expectedUserExt: openrtb_ext.ExtUser{
-				Consent:   consent,
-				DigiTrust: digitrust,
+				Consent: consent,
 			},
 		},
 		{
@@ -203,7 +193,7 @@ func TestGDPRConsent(t *testing.T) {
 			&mockAmpStoredReqFetcher{stored},
 			empty_fetcher.EmptyFetcher{},
 			&config.Configuration{MaxRequestSize: maxSize},
-			newTestMetrics(),
+			&metricsConfig.DummyMetricsEngine{},
 			analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 			map[string]string{},
 			[]byte{},
@@ -355,7 +345,7 @@ func TestCCPAConsent(t *testing.T) {
 			&mockAmpStoredReqFetcher{stored},
 			empty_fetcher.EmptyFetcher{},
 			&config.Configuration{MaxRequestSize: maxSize},
-			newTestMetrics(),
+			&metricsConfig.DummyMetricsEngine{},
 			analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 			map[string]string{},
 			[]byte{},
@@ -465,7 +455,7 @@ func TestConsentWarnings(t *testing.T) {
 			&mockAmpStoredReqFetcher{stored},
 			empty_fetcher.EmptyFetcher{},
 			&config.Configuration{MaxRequestSize: maxSize},
-			newTestMetrics(),
+			&metricsConfig.DummyMetricsEngine{},
 			analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 			map[string]string{},
 			[]byte{},
@@ -557,7 +547,7 @@ func TestNewAndLegacyConsentBothProvided(t *testing.T) {
 			&mockAmpStoredReqFetcher{stored},
 			empty_fetcher.EmptyFetcher{},
 			&config.Configuration{MaxRequestSize: maxSize},
-			newTestMetrics(),
+			&metricsConfig.DummyMetricsEngine{},
 			analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 			map[string]string{},
 			[]byte{},
@@ -608,7 +598,7 @@ func TestAMPSiteExt(t *testing.T) {
 		&mockAmpStoredReqFetcher{stored},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
-		newTestMetrics(),
+		&metricsConfig.DummyMetricsEngine{},
 		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 		nil,
 		nil,
@@ -644,7 +634,7 @@ func TestAmpBadRequests(t *testing.T) {
 		&mockAmpStoredReqFetcher{badRequests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
-		newTestMetrics(),
+		&metricsConfig.DummyMetricsEngine{},
 		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 		map[string]string{},
 		[]byte{},
@@ -674,7 +664,7 @@ func TestAmpDebug(t *testing.T) {
 		&mockAmpStoredReqFetcher{requests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
-		newTestMetrics(),
+		&metricsConfig.DummyMetricsEngine{},
 		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 		map[string]string{},
 		[]byte{},
@@ -746,7 +736,7 @@ func TestQueryParamOverrides(t *testing.T) {
 		&mockAmpStoredReqFetcher{requests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
-		newTestMetrics(),
+		&metricsConfig.DummyMetricsEngine{},
 		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 		map[string]string{},
 		[]byte{},
@@ -898,7 +888,7 @@ func (s formatOverrideSpec) execute(t *testing.T) {
 		&mockAmpStoredReqFetcher{requests},
 		empty_fetcher.EmptyFetcher{},
 		&config.Configuration{MaxRequestSize: maxSize},
-		newTestMetrics(),
+		&metricsConfig.DummyMetricsEngine{},
 		analyticsConf.NewPBSAnalytics(&config.Analytics{}),
 		map[string]string{},
 		[]byte{},
@@ -1277,7 +1267,7 @@ func TestBuildAmpObject(t *testing.T) {
 			mockAmpFetcher,
 			empty_fetcher.EmptyFetcher{},
 			&config.Configuration{MaxRequestSize: maxSize},
-			newTestMetrics(),
+			&metricsConfig.DummyMetricsEngine{},
 			logger,
 			map[string]string{},
 			[]byte{},
@@ -1295,8 +1285,4 @@ func TestBuildAmpObject(t *testing.T) {
 		assert.Equalf(t, test.expectedAmpObject.AmpTargetingValues, actualAmpObject.AmpTargetingValues, "Amp Object AmpTargetingValues doesn't match expected: %s\n", test.description)
 		assert.Equalf(t, test.expectedAmpObject.Origin, actualAmpObject.Origin, "Amp Object Origin field doesn't match expected: %s\n", test.description)
 	}
-}
-
-func newTestMetrics() *metrics.Metrics {
-	return metrics.NewMetrics(gometrics.NewRegistry(), openrtb_ext.CoreBidderNames(), config.DisabledMetrics{})
 }
