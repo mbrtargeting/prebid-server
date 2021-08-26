@@ -18,4 +18,5 @@ type ExtAppPrebid struct {
 // ExtAppData contains custom targeting fields. Each field will be an array of strings.
 type ExtAppData struct {
 	AndroidYlSdkVersion []string `json:"androidYlSdkVersion"`
+	IOSYlSdkVersion     []string `json:"iosYlSdkVersion"`
 }
