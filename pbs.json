@@ -11,13 +11,19 @@
   "cache.query": "uuid=%PBS_CACHE_UUID%",
   "port": 8003,
   "external_url": "https://prebid-server.lsd.test",
-  "gdpr.usersync_if_ambiguous": true,
+  "gdpr.default_value": "1",
+  "gdpr.host_vendor_id": 136,
+  "gdpr.timeouts_ms.init_vendorlist_fetches": 2000,
+  "gdpr.timeouts_ms.active_vendorlist_fetch": 2000,
   "cache.default_ttl_seconds.banner": 3000,
   "adapters": {
     "33across": {
       "disabled": true
     },
     "acuityads": {
+      "disabled": true
+    },
+    "adagio": {
       "disabled": true
     },
     "adf": {
@@ -77,6 +83,9 @@
     "aja": {
       "disabled": true
     },
+    "algorix": {
+      "disabled": true
+    },
     "amx": {
       "disabled": true
     },
@@ -92,6 +101,9 @@
     "avocet": {
       "disabled": true
     },
+    "axonix": {
+      "disabled": true
+    },
     "beachfront": {
       "disabled": true
     },
@@ -104,7 +116,13 @@
     "bidmachine": {
       "disabled": true
     },
+    "bidmyadz": {
+      "disabled": true
+    },
     "bidscube": {
+      "disabled": true
+    },
+    "bmtm": {
       "disabled": true
     },
     "brightroll": {
@@ -152,6 +170,9 @@
     "epom": {
       "disabled": true
     },
+    "e_volution": {
+      "disabled": true
+    },
     "gamma": {
       "disabled": true
     },
@@ -164,6 +185,9 @@
     "gumgum": {
       "disabled": true
     },
+    "huaweiads": {
+      "disabled": true
+    },
     "improvedigital": {
       "disabled": true
     },
@@ -174,6 +198,9 @@
       "disabled": true
     },
     "invibes": {
+      "disabled": true
+    },
+    "iqzone": {
       "disabled": true
     },
     "ix": {
@@ -194,9 +221,6 @@
     "kubient": {
       "disabled": true
     },
-    "lifestreet": {
-      "disabled": true
-    },
     "lockerdome": {
       "disabled": true
     },
@@ -204,6 +228,9 @@
       "disabled": true
     },
     "lunamedia": {
+      "disabled": true
+    },
+    "sa_lunamedia": {
       "disabled": true
     },
     "madvertise": {
@@ -237,6 +264,9 @@
       "disabled": true
     },
     "openx": {
+      "disabled": true
+    },
+    "operaads": {
       "disabled": true
     },
     "orbidder": {
@@ -281,10 +311,16 @@
     "smartadserver": {
       "disabled": true
     },
+    "smarthub": {
+      "disabled": true
+    },
     "smartrtb": {
       "disabled": true
     },
     "smartyads": {
+      "disabled": true
+    },
+    "smilewanted": {
       "disabled": true
     },
     "somoaudience": {

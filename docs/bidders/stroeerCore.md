@@ -17,39 +17,41 @@ Copy the following to your copy/fork of prebid server:
 
 ### Bidder setup
 
-Add BidderName constant in `bidders.go` for stroeerCore:
+Add BidderName constant in `openrtb_ext/bidders.go` for stroeerCore:
 ```go
 const (
 //...
-BidderStroeerCore      BidderName = "stroeerCore"
+    BidderStroeerCore      BidderName = "stroeerCore"
 //...
 );
 ```
 
-Add stroeerCore to the BidderMap in `bidders.go`:
+Add BidderStroeerCore to the BidderName[] array returned by CoreBidderNames() in `openrtb_ext/bidders.go`:
 
 ```go
-var BidderMap = map[string]BidderName{
-// ...
-"stroeerCore":       BidderStroeerCore,
-// ...
+func CoreBidderNames() []BidderName {
+    return []BidderName{
+        // ...
+        BidderStroeerCore,
+        // ...
+    }
 }
 ```
 
-Update the `newAdapterMap` function in `adapter_map.go`:
+Update the `newAdapterBuilders` function in `exchange/adapter_builders.go`:
 
 ```go
-func newAdapterMap(client *http.Client, cfg *config.Configuration, infos adapters.BidderInfos) map[openrtb_ext.BidderName]adaptedBidder {
-	ortbBidders := map[openrtb_ext.BidderName]adapters.Bidder{
+func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
+    return map[openrtb_ext.BidderName]adapters.Builder{
         // ...
-        openrtb_ext.BidderStroeerCore:      stroeerCore.NewStroeerCoreBidder(cfg.Adapters[strings.ToLower(string(openrtb_ext.BidderStroeerCore))].Endpoint),
+        openrtb_ext.BidderStroeerCore:       stroeerCore.Builder,
         // ...
     }
     // ...
 }
 ```
 
-Be sure this adapter is imported at the top of the `adapter_map.go` file:
+Be sure this adapter is imported at the top of the `exchange/adapter_builders.go` file:
 
 ```go
 import ( 
@@ -59,11 +61,21 @@ import (
 )
 ```
 
-And set the default value for `adapters.stroeercore.endpoint` in `config.go`:
+Set the default value for `adapters.stroeercore.endpoint` in `config.go`:
 
 ```go
   v.SetDefault("adapters.stroeercore.endpoint", "http://mhb.adscale.de/s2sdsh")
 ```
+
+And set userSync url to the production value in `static/bidder-info/stroeerCore.yaml`:
+
+```yaml
+# ...
+userSync:
+  iframe:
+     url: https://js.adscale.de/pbsync.html?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&redirect={{.RedirectURL}}
+```
+
 
 ### User synching setup
 
@@ -76,30 +88,6 @@ const VALID_ENDPOINTS = {
   appnexus: 'https://prebid.adnxs.com/pbs/v1/cookie_sync',
   stroeerCore: "https://your.prebid.server.host/cookie_sync"
 };
-```
-
-Now move your attention back to the prebid server source code. Register stroeerCore syncher in `config.go`:
-
-```go
-func (cfg *Configuration) setDerivedDefaults() {
-   ...
-   setDefaultUsersync(cfg.Adapters, openrtb_ext.BidderStroeerCore, "https://js.adscale.de/pbsync.html?gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&redirect="+url.QueryEscape(externalURL)+"%2Fsetuid%3Fbidder%3DstroeerCore%26gdpr%3D{{.GDPR}}%26gdpr_consent%3D{{.GDPRConsent}}%26uid%3D")
-   ...
-}
-```
-
-The default user sync TTL for a bidder is 14 days. For us, this is too long. 
-
-We do more than share our user id with prebid server. We trigger our own user syncing with our DSPs. And we need this to happen regularly. Thus the reason for a smaller TTL.
-
-To do this, edit the `cookie.go` file and add `stroeerCore` to `customBidderTTLs`:
-
-```go
-// customBidderTTLs stores rules about how long a particular UID sync is valid for each bidder.
-// If a bidder does a cookie sync *without* listing a rule here, then the DEFAULT_TTL will be used.
-var customBidderTTLs = map[string]time.Duration{
-    "stroeerCore": time.Second * 30,
-}
 ```
 
 In the AMP environment, user syncing on the page will look like this:
