@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/prebid/prebid-server/openrtb_ext"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // BidderInfos contains a mapping of bidder name to bidder info.
@@ -51,11 +51,6 @@ type Syncer struct {
 	// as the key for consistency, but that is not enforced as a requirement.
 	Key string `yaml:"key" mapstructure:"key"`
 
-	// Default identifies which endpoint is preferred if both are allowed by the publisher. This is
-	// only required if there is more than one endpoint configured for the bidder. Valid values are
-	// `iframe` and `redirect`.
-	Default string `yaml:"default" mapstructure:"default"`
-
 	// Supports allows bidders to specify which user sync endpoints they support but which don't have
 	// good defaults. Host companies should contact the bidder for the endpoint configuration. Hosts
 	// may not override this value.
@@ -67,6 +62,9 @@ type Syncer struct {
 	// Redirect configures an redirect endpoint for user syncing. This is also known as an image
 	// endpoint in the Prebid.js project.
 	Redirect *SyncerEndpoint `yaml:"redirect" mapstructure:"redirect"`
+
+	// ExternalURL is available as a macro to the RedirectURL template.
+	ExternalURL string `yaml:"externalUrl" mapstructure:"external_url"`
 
 	// SupportCORS identifies if CORS is supported for the user syncing endpoints.
 	SupportCORS *bool `yaml:"supportCors" mapstructure:"support_cors"`
@@ -93,20 +91,16 @@ func (s *Syncer) Override(original *Syncer) *Syncer {
 		copy.Key = s.Key
 	}
 
-	if s.Default != "" {
-		copy.Default = s.Default
-	}
-
 	if original == nil {
 		copy.IFrame = s.IFrame.Override(nil)
-	} else {
-		copy.IFrame = s.IFrame.Override(original.IFrame)
-	}
-
-	if original == nil {
 		copy.Redirect = s.Redirect.Override(nil)
 	} else {
+		copy.IFrame = s.IFrame.Override(original.IFrame)
 		copy.Redirect = s.Redirect.Override(original.Redirect)
+	}
+
+	if s.ExternalURL != "" {
+		copy.ExternalURL = s.ExternalURL
 	}
 
 	if s.SupportCORS != nil {
@@ -162,8 +156,8 @@ type SyncerEndpoint struct {
 	// `{{.ExternalURL}}/setuid?bidder={{.SyncerKey}}&gdpr={{.GDPR}}&gdpr_consent={{.GDPRConsent}}&f={{.SyncType}}&uid={{.UserMacro}}`
 	RedirectURL string `yaml:"redirectUrl" mapstructure:"redirect_url"`
 
-	// ExternalURL is available as a macro to the RedirectURL template. If not specified, the host configuration
-	// value is used.
+	// ExternalURL is available as a macro to the RedirectURL template. If not specified, either the syncer configuration
+	// value or the host configuration value is used.
 	ExternalURL string `yaml:"externalUrl" mapstructure:"external_url"`
 
 	// UserMacro is available as a macro to the RedirectURL template. This value is specific to the bidder server

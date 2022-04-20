@@ -15,7 +15,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/buger/jsonparser"
 	"github.com/mxmCherry/openrtb/v15/openrtb2"
+	"github.com/prebid/go-gdpr/vendorlist"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	jsonpatch "gopkg.in/evanphx/json-patch.v4"
+
 	"github.com/prebid/prebid-server/adapters"
 	"github.com/prebid/prebid-server/config"
 	"github.com/prebid/prebid-server/currency"
@@ -29,12 +35,6 @@ import (
 	"github.com/prebid/prebid-server/stored_requests"
 	"github.com/prebid/prebid-server/stored_requests/backends/file_fetcher"
 	"github.com/prebid/prebid-server/usersync"
-
-	"github.com/buger/jsonparser"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"github.com/yudai/gojsondiff"
-	"github.com/yudai/gojsondiff/formatter"
 )
 
 func TestNewExchange(t *testing.T) {
@@ -60,13 +60,14 @@ func TestNewExchange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.DummyMetricsEngine{})
+	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.DummyMetricsEngine{}, biddersInfo, gdpr.AlwaysAllow{}, currencyConverter, nilCategoryFetcher{}).(*exchange)
+	vendorListFetcher := func(ctx context.Context, id uint16) (vendorlist.VendorList, error) { return nil, nil }
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, vendorListFetcher, currencyConverter, nilCategoryFetcher{}).(*exchange)
 	for _, bidderName := range knownAdapters {
 		if _, ok := e.adapterMap[bidderName]; !ok {
 			t.Errorf("NewExchange produced an Exchange without bidder %s", bidderName)
@@ -108,13 +109,14 @@ func TestCharacterEscape(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.DummyMetricsEngine{})
+	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.DummyMetricsEngine{}, biddersInfo, gdpr.AlwaysAllow{}, currencyConverter, nilCategoryFetcher{}).(*exchange)
+	vendorListFetcher := func(ctx context.Context, id uint16) (vendorlist.VendorList, error) { return nil, nil }
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, vendorListFetcher, currencyConverter, nilCategoryFetcher{}).(*exchange)
 
 	// 	3) Build all the parameters e.buildBidResponse(ctx.Background(), liveA... ) needs
 	//liveAdapters []openrtb_ext.BidderName,
@@ -308,8 +310,8 @@ func TestDebugBehaviour(t *testing.T) {
 	e := new(exchange)
 
 	e.cache = &wellBehavedCache{}
-	e.me = &metricsConf.DummyMetricsEngine{}
-	e.gDPR = gdpr.AlwaysAllow{}
+	e.me = &metricsConf.NilMetricsEngine{}
+	e.vendorListFetcher = gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
 	e.currencyConverter = currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
 	e.categoriesFetcher = categoriesFetcher
 
@@ -319,11 +321,8 @@ func TestDebugBehaviour(t *testing.T) {
 	for _, test := range testCases {
 
 		e.adapterMap = map[openrtb_ext.BidderName]adaptedBidder{
-			openrtb_ext.BidderAppnexus: adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, &config.DebugInfo{Allow: test.debugData.bidderLevelDebugAllowed}),
+			openrtb_ext.BidderAppnexus: adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderAppnexus, &config.DebugInfo{Allow: test.debugData.bidderLevelDebugAllowed}),
 		}
-
-		//request level debug key
-		ctx = context.WithValue(ctx, DebugContextKey, test.in.debug)
 
 		bidRequest.Test = test.in.test
 
@@ -334,10 +333,12 @@ func TestDebugBehaviour(t *testing.T) {
 		}
 
 		auctionRequest := AuctionRequest{
-			BidRequest: bidRequest,
-			Account:    config.Account{DebugAllow: test.debugData.accountLevelDebugAllowed},
-			UserSyncs:  &emptyUsersync{},
-			StartTime:  time.Now(),
+			BidRequestWrapper:      &openrtb_ext.RequestWrapper{BidRequest: bidRequest},
+			Account:                config.Account{DebugAllow: test.debugData.accountLevelDebugAllowed},
+			UserSyncs:              &emptyUsersync{},
+			StartTime:              time.Now(),
+			GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+			TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
 		}
 		if test.generateWarnings {
 			var errL []error
@@ -380,7 +381,9 @@ func TestDebugBehaviour(t *testing.T) {
 
 			// If not nil, assert bid extension
 			if test.in.debug {
-				diffJson(t, test.desc, bidRequest.Ext, actualExt.Debug.ResolvedRequest.Ext)
+				actualResolvedReqExt, _, _, err := jsonparser.Get(actualExt.Debug.ResolvedRequest, "ext")
+				assert.NoError(t, err, "Resolved request should have the correct format")
+				assert.JSONEq(t, string(bidRequest.Ext), string(actualResolvedReqExt), test.desc)
 			}
 		} else if !test.debugData.bidderLevelDebugAllowed && test.debugData.accountLevelDebugAllowed {
 			assert.Equal(t, len(actualExt.Debug.HttpCalls), 0, "%s. ext.debug.httpcalls array should not be empty", "With bidder level debug disable option http calls should be empty")
@@ -466,8 +469,8 @@ func TestTwoBiddersDebugDisabledAndEnabled(t *testing.T) {
 
 	e := new(exchange)
 	e.cache = &wellBehavedCache{}
-	e.me = &metricsConf.DummyMetricsEngine{}
-	e.gDPR = gdpr.AlwaysAllow{}
+	e.me = &metricsConf.NilMetricsEngine{}
+	e.vendorListFetcher = gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
 	e.currencyConverter = currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
 	e.categoriesFetcher = categoriesFetcher
 
@@ -490,15 +493,17 @@ func TestTwoBiddersDebugDisabledAndEnabled(t *testing.T) {
 		bidRequest.Ext = json.RawMessage(`{"prebid":{"debug":true}}`)
 
 		auctionRequest := AuctionRequest{
-			BidRequest: bidRequest,
-			Account:    config.Account{DebugAllow: true},
-			UserSyncs:  &emptyUsersync{},
-			StartTime:  time.Now(),
+			BidRequestWrapper:      &openrtb_ext.RequestWrapper{BidRequest: bidRequest},
+			Account:                config.Account{DebugAllow: true},
+			UserSyncs:              &emptyUsersync{},
+			StartTime:              time.Now(),
+			GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+			TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
 		}
 
 		e.adapterMap = map[openrtb_ext.BidderName]adaptedBidder{
-			openrtb_ext.BidderAppnexus: adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, &config.DebugInfo{Allow: testCase.bidder1DebugEnabled}),
-			openrtb_ext.BidderTelaria:  adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, &config.DebugInfo{Allow: testCase.bidder2DebugEnabled}),
+			openrtb_ext.BidderAppnexus: adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderAppnexus, &config.DebugInfo{Allow: testCase.bidder1DebugEnabled}),
+			openrtb_ext.BidderTelaria:  adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderAppnexus, &config.DebugInfo{Allow: testCase.bidder2DebugEnabled}),
 		}
 		// Run test
 		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &debugLog)
@@ -622,8 +627,8 @@ func TestOverrideWithCustomCurrency(t *testing.T) {
 
 	e := new(exchange)
 	e.cache = &wellBehavedCache{}
-	e.me = &metricsConf.DummyMetricsEngine{}
-	e.gDPR = gdpr.AlwaysAllow{}
+	e.me = &metricsConf.NilMetricsEngine{}
+	e.vendorListFetcher = gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
 	e.currencyConverter = mockCurrencyConverter
 	e.categoriesFetcher = categoriesFetcher
 	e.bidIDGenerator = &mockBidIDGenerator{false, false}
@@ -652,7 +657,7 @@ func TestOverrideWithCustomCurrency(t *testing.T) {
 		}
 
 		e.adapterMap = map[openrtb_ext.BidderName]adaptedBidder{
-			openrtb_ext.BidderAppnexus: adaptBidder(oneDollarBidBidder, mockAppnexusBidService.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, nil),
+			openrtb_ext.BidderAppnexus: adaptBidder(oneDollarBidBidder, mockAppnexusBidService.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderAppnexus, nil),
 		}
 
 		// Set custom rates in extension
@@ -662,9 +667,11 @@ func TestOverrideWithCustomCurrency(t *testing.T) {
 		mockBidRequest.Cur = []string{test.in.bidRequestCurrency}
 
 		auctionRequest := AuctionRequest{
-			BidRequest: mockBidRequest,
-			Account:    config.Account{},
-			UserSyncs:  &emptyUsersync{},
+			BidRequestWrapper:      &openrtb_ext.RequestWrapper{BidRequest: mockBidRequest},
+			Account:                config.Account{},
+			UserSyncs:              &emptyUsersync{},
+			GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+			TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
 		}
 
 		// Run test
@@ -713,16 +720,18 @@ func TestAdapterCurrency(t *testing.T) {
 	mockBidder := &mockBidder{}
 	mockBidder.On("MakeRequests", mock.Anything, mock.Anything).Return([]*adapters.RequestData(nil), []error(nil))
 
+	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+
 	// Initialize Real Exchange
 	e := exchange{
 		cache:             &wellBehavedCache{},
-		me:                &metricsConf.DummyMetricsEngine{},
-		gDPR:              gdpr.AlwaysAllow{},
+		me:                &metricsConf.NilMetricsEngine{},
+		vendorListFetcher: vendorListFetcher,
 		currencyConverter: currencyConverter,
 		categoriesFetcher: nilCategoryFetcher{},
 		bidIDGenerator:    &mockBidIDGenerator{false, false},
 		adapterMap: map[openrtb_ext.BidderName]adaptedBidder{
-			openrtb_ext.BidderName("foo"): adaptBidder(mockBidder, nil, &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderName("foo"), nil),
+			openrtb_ext.BidderName("foo"): adaptBidder(mockBidder, nil, &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderName("foo"), nil),
 		},
 	}
 
@@ -744,9 +753,11 @@ func TestAdapterCurrency(t *testing.T) {
 
 	// Run Auction
 	auctionRequest := AuctionRequest{
-		BidRequest: request,
-		Account:    config.Account{},
-		UserSyncs:  &emptyUsersync{},
+		BidRequestWrapper:      &openrtb_ext.RequestWrapper{BidRequest: request},
+		Account:                config.Account{},
+		UserSyncs:              &emptyUsersync{},
+		GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+		TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
 	}
 	response, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
 	assert.NoError(t, err)
@@ -1103,11 +1114,11 @@ func TestReturnCreativeEndToEnd(t *testing.T) {
 
 	e := new(exchange)
 	e.adapterMap = map[openrtb_ext.BidderName]adaptedBidder{
-		openrtb_ext.BidderAppnexus: adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, nil),
+		openrtb_ext.BidderAppnexus: adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderAppnexus, nil),
 	}
 	e.cache = &wellBehavedCache{}
-	e.me = &metricsConf.DummyMetricsEngine{}
-	e.gDPR = gdpr.AlwaysAllow{}
+	e.me = &metricsConf.NilMetricsEngine{}
+	e.vendorListFetcher = gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
 	e.currencyConverter = currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
 	e.categoriesFetcher = categoriesFetcher
 	e.bidIDGenerator = &mockBidIDGenerator{false, false}
@@ -1129,9 +1140,11 @@ func TestReturnCreativeEndToEnd(t *testing.T) {
 			mockBidRequest.Ext = test.inExt
 
 			auctionRequest := AuctionRequest{
-				BidRequest: mockBidRequest,
-				Account:    config.Account{},
-				UserSyncs:  &emptyUsersync{},
+				BidRequestWrapper:      &openrtb_ext.RequestWrapper{BidRequest: mockBidRequest},
+				Account:                config.Account{},
+				UserSyncs:              &emptyUsersync{},
+				GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+				TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
 			}
 
 			// Run test
@@ -1199,13 +1212,14 @@ func TestGetBidCacheInfoEndToEnd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.DummyMetricsEngine{})
+	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)
 	}
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
 	pbc := pbc.NewClient(&http.Client{}, &cfg.CacheURL, &cfg.ExtCacheURL, testEngine)
-	e := NewExchange(adapters, pbc, cfg, map[string]usersync.Syncer{}, &metricsConf.DummyMetricsEngine{}, biddersInfo, gdpr.AlwaysAllow{}, currencyConverter, nilCategoryFetcher{}).(*exchange)
+	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+	e := NewExchange(adapters, pbc, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, vendorListFetcher, currencyConverter, nilCategoryFetcher{}).(*exchange)
 	// 	3) Build all the parameters e.buildBidResponse(ctx.Background(), liveA... ) needs
 	liveAdapters := []openrtb_ext.BidderName{bidderName}
 
@@ -1393,11 +1407,11 @@ func TestBidReturnsCreative(t *testing.T) {
 	}
 	e := new(exchange)
 	e.adapterMap = map[openrtb_ext.BidderName]adaptedBidder{
-		openrtb_ext.BidderAppnexus: adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.DummyMetricsEngine{}, openrtb_ext.BidderAppnexus, nil),
+		openrtb_ext.BidderAppnexus: adaptBidder(bidderImpl, server.Client(), &config.Configuration{}, &metricsConfig.NilMetricsEngine{}, openrtb_ext.BidderAppnexus, nil),
 	}
 	e.cache = &wellBehavedCache{}
-	e.me = &metricsConf.DummyMetricsEngine{}
-	e.gDPR = gdpr.AlwaysAllow{}
+	e.me = &metricsConf.NilMetricsEngine{}
+	e.vendorListFetcher = gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
 	e.currencyConverter = currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
 
 	//Run tests
@@ -1553,13 +1567,14 @@ func TestBidResponseCurrency(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.DummyMetricsEngine{})
+	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.DummyMetricsEngine{}, biddersInfo, gdpr.AlwaysAllow{}, currencyConverter, nilCategoryFetcher{}).(*exchange)
+	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, vendorListFetcher, currencyConverter, nilCategoryFetcher{}).(*exchange)
 
 	liveAdapters := make([]openrtb_ext.BidderName, 1)
 	liveAdapters[0] = "appnexus"
@@ -1698,7 +1713,8 @@ func TestBidResponseImpExtInfo(t *testing.T) {
 	cfg := &config.Configuration{Adapters: make(map[string]config.Adapter, 1)}
 	cfg.Adapters["appnexus"] = config.Adapter{Endpoint: "http://ib.adnxs.com"}
 
-	e := NewExchange(nil, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.DummyMetricsEngine{}, nil, gdpr.AlwaysAllow{}, nil, nilCategoryFetcher{}).(*exchange)
+	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+	e := NewExchange(nil, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, nil, vendorListFetcher, nil, nilCategoryFetcher{}).(*exchange)
 
 	liveAdapters := make([]openrtb_ext.BidderName, 1)
 	liveAdapters[0] = "appnexus"
@@ -1783,7 +1799,7 @@ func TestRaceIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.DummyMetricsEngine{})
+	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)
 	}
@@ -1791,13 +1807,16 @@ func TestRaceIntegration(t *testing.T) {
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
 
 	auctionRequest := AuctionRequest{
-		BidRequest: getTestBuildRequest(t),
-		Account:    config.Account{},
-		UserSyncs:  &emptyUsersync{},
+		BidRequestWrapper:      &openrtb_ext.RequestWrapper{BidRequest: getTestBuildRequest(t)},
+		Account:                config.Account{},
+		UserSyncs:              &emptyUsersync{},
+		GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+		TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
 	}
 
 	debugLog := DebugLog{}
-	ex := NewExchange(adapters, &wellBehavedCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.DummyMetricsEngine{}, biddersInfo, gdpr.AlwaysAllow{}, currencyConverter, &nilCategoryFetcher{}).(*exchange)
+	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+	ex := NewExchange(adapters, &wellBehavedCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, vendorListFetcher, currencyConverter, &nilCategoryFetcher{}).(*exchange)
 	_, err = ex.HoldAuction(context.Background(), auctionRequest, &debugLog)
 	if err != nil {
 		t.Errorf("HoldAuction returned unexpected error: %v", err)
@@ -1883,13 +1902,14 @@ func TestPanicRecovery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adapters, adaptersErr := BuildAdapters(&http.Client{}, cfg, biddersInfo, &metricsConf.DummyMetricsEngine{})
+	adapters, adaptersErr := BuildAdapters(&http.Client{}, cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)
 	}
 
 	currencyConverter := currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
-	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.DummyMetricsEngine{}, biddersInfo, gdpr.AlwaysAllow{}, currencyConverter, nilCategoryFetcher{}).(*exchange)
+	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+	e := NewExchange(adapters, nil, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, vendorListFetcher, currencyConverter, nilCategoryFetcher{}).(*exchange)
 
 	chBids := make(chan *bidResponseWrapper, 1)
 	panicker := func(bidderRequest BidderRequest, conversions currency.Conversions) {
@@ -1950,7 +1970,7 @@ func TestPanicRecoveryHighLevel(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.DummyMetricsEngine{})
+	adapters, adaptersErr := BuildAdapters(server.Client(), cfg, biddersInfo, &metricsConf.NilMetricsEngine{})
 	if adaptersErr != nil {
 		t.Fatalf("Error intializing adapters: %v", adaptersErr)
 	}
@@ -1962,7 +1982,8 @@ func TestPanicRecoveryHighLevel(t *testing.T) {
 		t.Errorf("Failed to create a category Fetcher: %v", error)
 	}
 
-	e := NewExchange(adapters, &mockCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.DummyMetricsEngine{}, biddersInfo, gdpr.AlwaysAllow{}, currencyConverter, categoriesFetcher).(*exchange)
+	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+	e := NewExchange(adapters, &mockCache{}, cfg, map[string]usersync.Syncer{}, &metricsConf.NilMetricsEngine{}, biddersInfo, vendorListFetcher, currencyConverter, categoriesFetcher).(*exchange)
 
 	e.adapterMap[openrtb_ext.BidderBeachfront] = panicingAdapter{}
 	e.adapterMap[openrtb_ext.BidderAppnexus] = panicingAdapter{}
@@ -1996,9 +2017,11 @@ func TestPanicRecoveryHighLevel(t *testing.T) {
 	}
 
 	auctionRequest := AuctionRequest{
-		BidRequest: request,
-		Account:    config.Account{},
-		UserSyncs:  &emptyUsersync{},
+		BidRequestWrapper:      &openrtb_ext.RequestWrapper{BidRequest: request},
+		Account:                config.Account{},
+		UserSyncs:              &emptyUsersync{},
+		GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+		TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
 	}
 	debugLog := DebugLog{}
 	_, err = e.HoldAuction(context.Background(), auctionRequest, &debugLog)
@@ -2022,38 +2045,6 @@ func TestTimeoutComputation(t *testing.T) {
 
 	if finalDeadline, ok := auctionCtx.Deadline(); !ok || deadline.Add(-time.Duration(cacheTimeMillis)*time.Millisecond) != finalDeadline {
 		t.Errorf("The auction should allocate cacheTime amount of time from the whole request timeout.")
-	}
-}
-
-func TestSetDebugContextKey(t *testing.T) {
-	// Test cases
-	testCases := []struct {
-		desc              string
-		inDebugInfo       bool
-		expectedDebugInfo bool
-	}{
-		{
-			desc:              "debugInfo flag on, we expect to find DebugContextKey key in context",
-			inDebugInfo:       true,
-			expectedDebugInfo: true,
-		},
-		{
-			desc:              "debugInfo flag off, we don't expect to find DebugContextKey key in context",
-			inDebugInfo:       false,
-			expectedDebugInfo: false,
-		},
-	}
-
-	// Setup test
-	ex := exchange{}
-
-	// Run tests
-	for _, test := range testCases {
-		auctionCtx := ex.makeDebugContext(context.Background(), test.inDebugInfo)
-
-		debugInfo := auctionCtx.Value(DebugContextKey)
-		assert.NotNil(t, debugInfo, "%s. Flag set, `debugInfo` shouldn't be nil")
-		assert.Equal(t, test.expectedDebugInfo, debugInfo.(bool), "Desc: %s. Incorrect value mapped to DebugContextKey(`debugInfo`) in the context\n", test.desc)
 	}
 }
 
@@ -2118,6 +2109,9 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 			Enabled:         spec.GDPREnabled,
 			DefaultValue:    gdprDefaultValue,
 			EEACountriesMap: eeac,
+			TCF2: config.TCF2{
+				Enabled: spec.GDPREnabled,
+			},
 		},
 	}
 	bidIdGenerator := &mockBidIDGenerator{}
@@ -2133,21 +2127,31 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 	}
 
 	auctionRequest := AuctionRequest{
-		BidRequest: &spec.IncomingRequest.OrtbRequest,
+		BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: &spec.IncomingRequest.OrtbRequest},
 		Account: config.Account{
 			ID:            "testaccount",
 			EventsEnabled: spec.EventsEnabled,
 			DebugAllow:    true,
 		},
-		UserSyncs: mockIdFetcher(spec.IncomingRequest.Usersyncs),
+		UserSyncs:              mockIdFetcher(spec.IncomingRequest.Usersyncs),
+		GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+		TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
 	}
 	if spec.StartTime > 0 {
 		auctionRequest.StartTime = time.Unix(0, spec.StartTime*1e+6)
 	}
+	if spec.RequestType != nil {
+		auctionRequest.RequestType = *spec.RequestType
+	}
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, DebugContextKey, true)
 
 	bid, err := ex.HoldAuction(ctx, auctionRequest, debugLog)
+	if len(spec.Response.Error) > 0 && spec.Response.Bids == nil {
+		if err.Error() != spec.Response.Error {
+			t.Errorf("%s: Exchange returned different errors. Expected %s, got %s", filename, spec.Response.Error, err.Error())
+		}
+		return
+	}
 	responseTimes := extractResponseTimes(t, filename, bid)
 	for _, bidderName := range biddersInAuction {
 		if _, ok := responseTimes[bidderName]; !ok {
@@ -2179,7 +2183,7 @@ func runSpec(t *testing.T, filename string, spec *exchangeSpec) {
 	}
 	if spec.IncomingRequest.OrtbRequest.Test == 1 {
 		//compare debug info
-		diffJson(t, "Debug info modified", bid.Ext, spec.Response.Ext)
+		assert.JSONEq(t, string(bid.Ext), string(spec.Response.Ext), "Debug info modified")
 	}
 }
 
@@ -2213,7 +2217,7 @@ func extractResponseTimes(t *testing.T, context string, bid *openrtb2.BidRespons
 		// Delete the response times so that they don't appear in the JSON, because they can't be tested reliably anyway.
 		// If there's no other ext, just delete it altogether.
 		bid.Ext = jsonparser.Delete(bid.Ext, "responsetimemillis")
-		if diff, err := gojsondiff.New().Compare(bid.Ext, []byte("{}")); err == nil && !diff.Modified() {
+		if jsonpatch.Equal(bid.Ext, []byte("{}")) {
 			bid.Ext = nil
 		}
 		return responseTimes
@@ -2258,6 +2262,8 @@ func newExchangeForTests(t *testing.T, filename string, expectations map[string]
 		t.Fatalf("Failed to create a category Fetcher: %v", error)
 	}
 
+	vendorListFetcher := gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+
 	bidderToSyncerKey := map[string]string{}
 	for _, bidderName := range openrtb_ext.CoreBidderNames() {
 		bidderToSyncerKey[string(bidderName)] = string(bidderName)
@@ -2273,7 +2279,7 @@ func newExchangeForTests(t *testing.T, filename string, expectations map[string]
 		me:                metricsConf.NewMetricsEngine(&config.Configuration{}, openrtb_ext.CoreBidderNames(), nil),
 		cache:             &wellBehavedCache{},
 		cacheTime:         0,
-		gDPR:              &permissionsMock{allowAllBidders: true},
+		vendorListFetcher: vendorListFetcher,
 		currencyConverter: currency.NewRateConverter(&http.Client{}, "", time.Duration(0)),
 		gdprDefaultValue:  gdprDefaultValue,
 		privacyConfig:     privacyConfig,
@@ -3033,7 +3039,7 @@ func TestCategoryMappingTwoBiddersOneBidEachNoCategorySamePrice(t *testing.T) {
 		adapterBids[bidderNameApn1] = &seatBidApn1
 		adapterBids[bidderNameApn2] = &seatBidApn2
 
-		bidCategory, adapterBids, rejections, err := applyCategoryMapping(nil, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
+		bidCategory, _, rejections, err := applyCategoryMapping(nil, &requestExt, adapterBids, categoriesFetcher, targData, &randomDeduplicateBidBooleanGenerator{})
 
 		assert.NoError(t, err, "Category mapping error should be empty")
 		assert.Len(t, rejections, 1, "There should be 1 bid rejection message")
@@ -3491,11 +3497,19 @@ func TestMakeBidExtJSON(t *testing.T) {
 
 	testCases := []aTest{
 		{
-			description:        "Valid extension, non empty extBidPrebid and valid imp ext info",
+			description:        "Valid extension, non empty extBidPrebid, valid imp ext info, meta from adapter",
 			ext:                json.RawMessage(`{"video":{"h":100}}`),
+			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("video"), Meta: &openrtb_ext.ExtBidPrebidMeta{BrandName: "foo"}},
+			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`)}},
+			expectedBidExt:     `{"prebid":{"meta": {"brandName": "foo"}, "type":"video"},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}}`,
+			expectedErrMessage: "",
+		},
+		{
+			description:        "Valid extension, non empty extBidPrebid, valid imp ext info, meta from response",
+			ext:                json.RawMessage(`{"video":{"h":100},"prebid":{"meta": {"brandName": "foo"}}}`),
 			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("video")},
 			impExtInfo:         map[string]ImpExtInfo{"test_imp_id": {true, []byte(`{"video":{"h":480,"mimes":["video/mp4"]}}`)}},
-			expectedBidExt:     `{"prebid":{"type":"video"},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}}`,
+			expectedBidExt:     `{"prebid":{"meta": {"brandName": "foo"}, "type":"video"},"storedrequestattributes":{"h":480,"mimes":["video/mp4"]},"video":{"h":100}}`,
 			expectedErrMessage: "",
 		},
 		{
@@ -3554,6 +3568,54 @@ func TestMakeBidExtJSON(t *testing.T) {
 			expectedBidExt:     `{"prebid":{"type":"video"}, "storedrequestattributes":{"h":480,"mimes":["video/mp4"]}}`,
 			expectedErrMessage: "",
 		},
+		{
+			description:        "Meta - Defined By Bid - Nil Extension",
+			ext:                nil,
+			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("banner"), Meta: &openrtb_ext.ExtBidPrebidMeta{BrandName: "foo"}},
+			impExtInfo:         map[string]ImpExtInfo{},
+			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo"},"type":"banner"}}`,
+			expectedErrMessage: "",
+		},
+		{
+			description:        "Meta - Defined By Bid - Empty Extension",
+			ext:                json.RawMessage(`{}`),
+			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("banner"), Meta: &openrtb_ext.ExtBidPrebidMeta{BrandName: "foo"}},
+			impExtInfo:         nil,
+			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo"},"type":"banner"}}`,
+			expectedErrMessage: "",
+		},
+		{
+			description:        "Meta - Defined By Bid - Existing Extension Overwritten",
+			ext:                json.RawMessage(`{"prebid":{"meta":{"brandName":"notfoo", "brandId": 42}}}`),
+			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("banner"), Meta: &openrtb_ext.ExtBidPrebidMeta{BrandName: "foo"}},
+			impExtInfo:         nil,
+			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo"},"type":"banner"}}`,
+			expectedErrMessage: "",
+		},
+		{
+			description:        "Meta - Not Defined By Bid - Persists From Bid Ext",
+			ext:                json.RawMessage(`{"prebid":{"meta":{"brandName":"foo"}}}`),
+			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("banner")},
+			impExtInfo:         nil,
+			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo"},"type":"banner"}}`,
+			expectedErrMessage: "",
+		},
+		{
+			description:        "Meta - Not Defined By Bid - Persists From Bid Ext - Invalid Fields Ignored",
+			ext:                json.RawMessage(`{"prebid":{"meta":{"brandName":"foo","unknown":"value"}}}`),
+			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("banner")},
+			impExtInfo:         nil,
+			expectedBidExt:     `{"prebid":{"meta":{"brandName":"foo"},"type":"banner"}}`,
+			expectedErrMessage: "",
+		},
+		{
+			description:        "Meta - Not Defined",
+			ext:                nil,
+			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("banner")},
+			impExtInfo:         nil,
+			expectedBidExt:     `{"prebid":{"type":"banner"}}`,
+			expectedErrMessage: "",
+		},
 		//Error cases
 		{
 			description:        "Invalid extension, valid extBidPrebid and valid imp ext info",
@@ -3571,6 +3633,14 @@ func TestMakeBidExtJSON(t *testing.T) {
 			expectedBidExt:     ``,
 			expectedErrMessage: "invalid character",
 		},
+		{
+			description:        "Meta - Invalid",
+			ext:                json.RawMessage(`{"prebid":{"meta":{"brandId":"foo"}}}`), // brandId should be an int, but is a string in this test case
+			extBidPrebid:       openrtb_ext.ExtBidPrebid{Type: openrtb_ext.BidType("banner")},
+			impExtInfo:         nil,
+			expectedErrMessage: "error validaing response from server, json: cannot unmarshal string into Go struct field ExtBidPrebidMeta.prebid.meta.brandId of type int",
+		},
+		// add invalid
 	}
 
 	for _, test := range testCases {
@@ -3585,6 +3655,279 @@ func TestMakeBidExtJSON(t *testing.T) {
 	}
 }
 
+func TestStoredAuctionResponses(t *testing.T) {
+	categoriesFetcher, error := newCategoryFetcher("./test/category-mapping")
+	if error != nil {
+		t.Errorf("Failed to create a category Fetcher: %v", error)
+	}
+
+	e := new(exchange)
+	e.cache = &wellBehavedCache{}
+	e.me = &metricsConf.NilMetricsEngine{}
+	e.vendorListFetcher = gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+	e.categoriesFetcher = categoriesFetcher
+	e.bidIDGenerator = &mockBidIDGenerator{false, false}
+	e.currencyConverter = currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
+
+	// Define mock incoming bid requeset
+	mockBidRequest := &openrtb2.BidRequest{
+		ID: "request-id",
+		Imp: []openrtb2.Imp{{
+			ID:    "impression-id",
+			Video: &openrtb2.Video{W: 400, H: 300},
+		}},
+	}
+
+	expectedBidResponse := &openrtb2.BidResponse{
+		ID: "request-id",
+		SeatBid: []openrtb2.SeatBid{
+			{
+				Bid: []openrtb2.Bid{
+					{ID: "bid_id", ImpID: "impression-id", Ext: json.RawMessage(`{"prebid":{"type":""}}`)},
+				},
+				Seat: "appnexus",
+			},
+		},
+	}
+
+	testCases := []struct {
+		desc              string
+		storedAuctionResp map[string]json.RawMessage
+		errorExpected     bool
+	}{
+		{
+			desc: "Single imp with valid stored response",
+			storedAuctionResp: map[string]json.RawMessage{
+				"impression-id": json.RawMessage(`[{"bid": [{"id": "bid_id"}],"seat": "appnexus"}]`),
+			},
+			errorExpected: false,
+		},
+		{
+			desc: "Single imp with invalid stored response",
+			storedAuctionResp: map[string]json.RawMessage{
+				"impression-id": json.RawMessage(`[}]`),
+			},
+			errorExpected: true,
+		},
+	}
+
+	for _, test := range testCases {
+
+		auctionRequest := AuctionRequest{
+			BidRequestWrapper:      &openrtb_ext.RequestWrapper{BidRequest: mockBidRequest},
+			Account:                config.Account{},
+			UserSyncs:              &emptyUsersync{},
+			StoredAuctionResponses: test.storedAuctionResp,
+			GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+			TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
+		}
+
+		// Run test
+		outBidResponse, err := e.HoldAuction(context.Background(), auctionRequest, &DebugLog{})
+		if test.errorExpected {
+			assert.Error(t, err, "Error should be returned")
+		} else {
+			assert.NoErrorf(t, err, "%s. HoldAuction error: %v \n", test.desc, err)
+			outBidResponse.Ext = nil
+			assert.Equal(t, expectedBidResponse, outBidResponse, "Incorrect stored auction response")
+		}
+
+	}
+}
+
+func TestBuildStoredAuctionResponses(t *testing.T) {
+
+	type testIn struct {
+		StoredAuctionResponses map[string]json.RawMessage
+	}
+	type testResults struct {
+		adapterBids  map[openrtb_ext.BidderName]*pbsOrtbSeatBid
+		liveAdapters []openrtb_ext.BidderName
+	}
+
+	testCases := []struct {
+		desc     string
+		in       testIn
+		expected testResults
+	}{
+		{
+			desc: "Single imp with single stored response bid",
+			in: testIn{
+				StoredAuctionResponses: map[string]json.RawMessage{
+					"impression-id": json.RawMessage(`[{"bid": [{"id": "bid_id"}],"seat": "appnexus"}]`),
+				},
+			},
+			expected: testResults{
+				adapterBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+					openrtb_ext.BidderName("appnexus"): {
+						bids: []*pbsOrtbBid{
+							{
+								bid: &openrtb2.Bid{ID: "bid_id", ImpID: "impression-id"},
+							},
+						},
+					},
+				},
+				liveAdapters: []openrtb_ext.BidderName{openrtb_ext.BidderName("appnexus")},
+			},
+		},
+		{
+			desc: "Single imp with multiple bids in stored response one bidder",
+			in: testIn{
+				StoredAuctionResponses: map[string]json.RawMessage{
+					"impression-id": json.RawMessage(`[{"bid": [{"id": "bid_id1"}, {"id": "bid_id2"}],"seat": "appnexus"}]`),
+				},
+			},
+			expected: testResults{
+				adapterBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+					openrtb_ext.BidderName("appnexus"): {
+						bids: []*pbsOrtbBid{
+							{bid: &openrtb2.Bid{ID: "bid_id1", ImpID: "impression-id"}},
+							{bid: &openrtb2.Bid{ID: "bid_id2", ImpID: "impression-id"}},
+						},
+					},
+				},
+				liveAdapters: []openrtb_ext.BidderName{openrtb_ext.BidderName("appnexus")},
+			},
+		},
+		{
+			desc: "Single imp with multiple bids in stored response two bidders",
+			in: testIn{
+				StoredAuctionResponses: map[string]json.RawMessage{
+					"impression-id": json.RawMessage(`[{"bid": [{"id": "apn_id1"}, {"id": "apn_id2"}],"seat": "appnexus"}, {"bid": [{"id": "rubicon_id1"}, {"id": "rubicon_id2"}],"seat": "rubicon"}]`),
+				},
+			},
+			expected: testResults{
+				adapterBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+					openrtb_ext.BidderName("appnexus"): {
+						bids: []*pbsOrtbBid{
+							{bid: &openrtb2.Bid{ID: "apn_id1", ImpID: "impression-id"}},
+							{bid: &openrtb2.Bid{ID: "apn_id2", ImpID: "impression-id"}},
+						},
+					},
+					openrtb_ext.BidderName("rubicon"): {
+						bids: []*pbsOrtbBid{
+							{bid: &openrtb2.Bid{ID: "rubicon_id1", ImpID: "impression-id"}},
+							{bid: &openrtb2.Bid{ID: "rubicon_id2", ImpID: "impression-id"}},
+						},
+					},
+				},
+				liveAdapters: []openrtb_ext.BidderName{openrtb_ext.BidderName("appnexus"), openrtb_ext.BidderName("rubicon")},
+			},
+		},
+		{
+			desc: "Two imps with two bids in stored response two bidders, different bids number",
+			in: testIn{
+				StoredAuctionResponses: map[string]json.RawMessage{
+					"impression-id1": json.RawMessage(`[{"bid": [{"id": "apn_id1"}, {"id": "apn_id2"}],"seat": "appnexus"}]`),
+					"impression-id2": json.RawMessage(`[{"bid": [{"id": "apn_id1"}, {"id": "apn_id2"}],"seat": "appnexus"}, {"bid": [{"id": "rubicon_id1"}, {"id": "rubicon_id2"}],"seat": "rubicon"}]`),
+				},
+			},
+			expected: testResults{
+				adapterBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+					openrtb_ext.BidderName("appnexus"): {
+						bids: []*pbsOrtbBid{
+							{bid: &openrtb2.Bid{ID: "apn_id1", ImpID: "impression-id1"}},
+							{bid: &openrtb2.Bid{ID: "apn_id2", ImpID: "impression-id1"}},
+							{bid: &openrtb2.Bid{ID: "apn_id1", ImpID: "impression-id2"}},
+							{bid: &openrtb2.Bid{ID: "apn_id2", ImpID: "impression-id2"}},
+						},
+					},
+					openrtb_ext.BidderName("rubicon"): {
+						bids: []*pbsOrtbBid{
+							{bid: &openrtb2.Bid{ID: "rubicon_id1", ImpID: "impression-id2"}},
+							{bid: &openrtb2.Bid{ID: "rubicon_id2", ImpID: "impression-id2"}},
+						},
+					},
+				},
+				liveAdapters: []openrtb_ext.BidderName{openrtb_ext.BidderName("appnexus"), openrtb_ext.BidderName("rubicon")},
+			},
+		},
+		{
+			desc: "Two imps with two bids in stored response two bidders",
+			in: testIn{
+				StoredAuctionResponses: map[string]json.RawMessage{
+					"impression-id1": json.RawMessage(`[{"bid": [{"id": "apn_id1"}, {"id": "apn_id2"}],"seat": "appnexus"}, {"bid": [{"id": "rubicon_id1"}, {"id": "rubicon_id2"}],"seat": "rubicon"}]`),
+					"impression-id2": json.RawMessage(`[{"bid": [{"id": "apn_id1"}, {"id": "apn_id2"}],"seat": "appnexus"}, {"bid": [{"id": "rubicon_id1"}, {"id": "rubicon_id2"}],"seat": "rubicon"}]`),
+				},
+			},
+			expected: testResults{
+				adapterBids: map[openrtb_ext.BidderName]*pbsOrtbSeatBid{
+					openrtb_ext.BidderName("appnexus"): {
+						bids: []*pbsOrtbBid{
+							{bid: &openrtb2.Bid{ID: "apn_id1", ImpID: "impression-id1"}},
+							{bid: &openrtb2.Bid{ID: "apn_id2", ImpID: "impression-id1"}},
+							{bid: &openrtb2.Bid{ID: "apn_id1", ImpID: "impression-id2"}},
+							{bid: &openrtb2.Bid{ID: "apn_id2", ImpID: "impression-id2"}},
+						},
+					},
+					openrtb_ext.BidderName("rubicon"): {
+						bids: []*pbsOrtbBid{
+							{bid: &openrtb2.Bid{ID: "rubicon_id1", ImpID: "impression-id1"}},
+							{bid: &openrtb2.Bid{ID: "rubicon_id2", ImpID: "impression-id1"}},
+							{bid: &openrtb2.Bid{ID: "rubicon_id1", ImpID: "impression-id2"}},
+							{bid: &openrtb2.Bid{ID: "rubicon_id2", ImpID: "impression-id2"}},
+						},
+					},
+				},
+				liveAdapters: []openrtb_ext.BidderName{openrtb_ext.BidderName("appnexus"), openrtb_ext.BidderName("rubicon")},
+			},
+		},
+	}
+	for _, test := range testCases {
+
+		bids, adapters, err := buildStoredAuctionResponse(test.in.StoredAuctionResponses)
+		assert.NoErrorf(t, err, "%s. HoldAuction error: %v \n", test.desc, err)
+
+		assert.ElementsMatch(t, test.expected.liveAdapters, adapters, "Incorrect adapter list")
+
+		for _, bidderName := range test.expected.liveAdapters {
+			assert.ElementsMatch(t, test.expected.adapterBids[bidderName].bids, bids[bidderName].bids, "Incorrect bids")
+		}
+
+	}
+}
+
+func TestAuctionDebugEnabled(t *testing.T) {
+	categoriesFetcher, err := newCategoryFetcher("./test/category-mapping")
+	assert.NoError(t, err, "error should be nil")
+	e := new(exchange)
+	e.cache = &wellBehavedCache{}
+	e.me = &metricsConf.NilMetricsEngine{}
+	e.vendorListFetcher = gdpr.NewVendorListFetcher(context.Background(), config.GDPR{}, &http.Client{}, gdpr.VendorListURLMaker)
+	e.categoriesFetcher = categoriesFetcher
+	e.bidIDGenerator = &mockBidIDGenerator{false, false}
+	e.currencyConverter = currency.NewRateConverter(&http.Client{}, "", time.Duration(0))
+
+	ctx := context.Background()
+
+	bidRequest := &openrtb2.BidRequest{
+		ID:   "some-request-id",
+		Test: 1,
+	}
+
+	auctionRequest := AuctionRequest{
+		BidRequestWrapper:      &openrtb_ext.RequestWrapper{BidRequest: bidRequest},
+		Account:                config.Account{DebugAllow: false},
+		UserSyncs:              &emptyUsersync{},
+		StartTime:              time.Now(),
+		RequestType:            metrics.ReqTypeORTB2Web,
+		GDPRPermissionsBuilder: mockGDPRPermissionsBuilder,
+		TCF2ConfigBuilder:      mockTCF2ConfigBuilder,
+	}
+
+	debugLog := &DebugLog{DebugOverride: true, DebugEnabledOrOverridden: true}
+	resp, err := e.HoldAuction(ctx, auctionRequest, debugLog)
+
+	assert.NoError(t, err, "error should be nil")
+
+	expectedResolvedRequest := `{"id":"some-request-id","imp":null,"test":1}`
+	actualResolvedRequest, _, _, err := jsonparser.Get(resp.Ext, "debug", "resolvedrequest")
+	assert.NoError(t, err, "error should be nil")
+	assert.NotNil(t, actualResolvedRequest, "actualResolvedRequest should not be nil")
+	assert.JSONEq(t, expectedResolvedRequest, string(actualResolvedRequest), "Resolved request is incorrect")
+
+}
+
 type exchangeSpec struct {
 	GDPREnabled       bool                   `json:"gdpr_enabled"`
 	IncomingRequest   exchangeRequest        `json:"incomingRequest"`
@@ -3597,6 +3940,7 @@ type exchangeSpec struct {
 	EventsEnabled     bool                   `json:"events_enabled,omitempty"`
 	StartTime         int64                  `json:"start_time_ms,omitempty"`
 	BidIDGenerator    *mockBidIDGenerator    `json:"bidIDGenerator,omitempty"`
+	RequestType       *metrics.RequestType   `json:"requestType,omitempty"`
 }
 
 type exchangeRequest struct {
@@ -3705,6 +4049,15 @@ func (b *validatingBidder) requestBid(ctx context.Context, request *openrtb2.Bid
 	return
 }
 
+type capturingRequestBidder struct {
+	req *openrtb2.BidRequest
+}
+
+func (b *capturingRequestBidder) requestBid(ctx context.Context, request *openrtb2.BidRequest, name openrtb_ext.BidderName, bidAdjustment float64, conversions currency.Conversions, reqInfo *adapters.ExtraRequestInfo, accountDebugAllowed, headerDebugAllowed bool) (seatBid *pbsOrtbSeatBid, errs []error) {
+	b.req = request
+	return &pbsOrtbSeatBid{}, nil
+}
+
 func diffOrtbRequests(t *testing.T, description string, expected *openrtb2.BidRequest, actual *openrtb2.BidRequest) {
 	t.Helper()
 	actualJSON, err := json.Marshal(actual)
@@ -3717,7 +4070,7 @@ func diffOrtbRequests(t *testing.T, description string, expected *openrtb2.BidRe
 		t.Fatalf("%s failed to marshal expected BidRequest into JSON. %v", description, err)
 	}
 
-	diffJson(t, description, actualJSON, expectedJSON)
+	assert.JSONEq(t, string(expectedJSON), string(actualJSON), description)
 }
 
 func diffOrtbResponses(t *testing.T, description string, expected *openrtb2.BidResponse, actual *openrtb2.BidResponse) {
@@ -3740,7 +4093,7 @@ func diffOrtbResponses(t *testing.T, description string, expected *openrtb2.BidR
 		t.Fatalf("%s failed to marshal expected BidResponse into JSON. %v", description, err)
 	}
 
-	diffJson(t, description, actualJSON, expectedJSON)
+	assert.JSONEq(t, string(expectedJSON), string(actualJSON), description)
 }
 
 func mapifySeatBids(t *testing.T, context string, seatBids []openrtb2.SeatBid) map[string]*openrtb2.SeatBid {
@@ -3754,32 +4107,6 @@ func mapifySeatBids(t *testing.T, context string, seatBids []openrtb2.SeatBid) m
 		}
 	}
 	return seatMap
-}
-
-// diffJson compares two JSON byte arrays for structural equality. It will produce an error if either
-// byte array is not actually JSON.
-func diffJson(t *testing.T, description string, actual []byte, expected []byte) {
-	t.Helper()
-	diff, err := gojsondiff.New().Compare(actual, expected)
-	if err != nil {
-		t.Fatalf("%s json diff failed. %v", description, err)
-	}
-
-	if diff.Modified() {
-		var left interface{}
-		if err := json.Unmarshal(actual, &left); err != nil {
-			t.Fatalf("%s json did not match, but unmarshalling failed. %v", description, err)
-		}
-		printer := formatter.NewAsciiFormatter(left, formatter.AsciiFormatterConfig{
-			ShowArrayIndex: true,
-		})
-		output, err := printer.Format(diff)
-		if err != nil {
-			t.Errorf("%s did not match, but diff formatting failed. %v", description, err)
-		} else {
-			t.Errorf("%s json did not match expected.\n\n%s", description, output)
-		}
-	}
 }
 
 func mockHandler(statusCode int, getBody string, postBody string) http.Handler {
@@ -3878,4 +4205,14 @@ func (m *mockBidder) MakeRequests(request *openrtb2.BidRequest, reqInfo *adapter
 func (m *mockBidder) MakeBids(internalRequest *openrtb2.BidRequest, externalRequest *adapters.RequestData, response *adapters.ResponseData) (*adapters.BidderResponse, []error) {
 	args := m.Called(internalRequest, externalRequest, response)
 	return args.Get(0).(*adapters.BidderResponse), args.Get(1).([]error)
+}
+
+func mockGDPRPermissionsBuilder(cfg config.GDPR, tcf2Config gdpr.TCF2ConfigReader, vendorIDs map[openrtb_ext.BidderName]uint16, fetcher gdpr.VendorListFetcher) gdpr.Permissions {
+	return &permissionsMock{allowAllBidders: true}
+}
+
+func mockTCF2ConfigBuilder(hostConfig config.TCF2, accountConfig config.AccountGDPR) gdpr.TCF2ConfigReader {
+	return &config.TCF2{
+		Enabled: hostConfig.Enabled,
+	}
 }

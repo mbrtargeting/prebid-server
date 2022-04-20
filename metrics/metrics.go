@@ -300,6 +300,8 @@ const (
 	CookieSyncBadRequest            CookieSyncStatus = "bad_request"
 	CookieSyncOptOut                CookieSyncStatus = "opt_out"
 	CookieSyncGDPRHostCookieBlocked CookieSyncStatus = "gdpr_blocked_host_cookie"
+	CookieSyncAccountBlocked        CookieSyncStatus = "acct_blocked"
+	CookieSyncAccountInvalid        CookieSyncStatus = "acct_invalid"
 )
 
 // CookieSyncStatuses returns possible cookie sync statuses.
@@ -382,7 +384,6 @@ type MetricsEngine interface {
 	RecordConnectionClose(success bool)
 	RecordRequest(labels Labels)                           // ignores adapter. only statusOk and statusErr fom status
 	RecordImps(labels ImpLabels)                           // RecordImps across openRTB2 engines that support the 'Native' Imp Type
-	RecordLegacyImps(labels Labels, numImps int)           // RecordImps for the legacy engine
 	RecordRequestTime(labels Labels, length time.Duration) // ignores adapter. only statusOk and statusErr fom status
 	RecordAdapterRequest(labels AdapterLabels)
 	RecordAdapterConnections(adapterName openrtb_ext.BidderName, connWasReused bool, connWaitTime time.Duration)
@@ -405,7 +406,7 @@ type MetricsEngine interface {
 	RecordStoredDataError(labels StoredDataLabels)
 	RecordPrebidCacheRequestTime(success bool, length time.Duration)
 	RecordRequestQueueTime(success bool, requestType RequestType, length time.Duration)
-	RecordTimeoutNotice(sucess bool)
+	RecordTimeoutNotice(success bool)
 	RecordRequestPrivacy(privacy PrivacyLabels)
 	RecordAdapterGDPRRequestBlocked(adapterName openrtb_ext.BidderName)
 }

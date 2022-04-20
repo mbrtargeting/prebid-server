@@ -234,7 +234,7 @@ func TestSetUIDEndpoint(t *testing.T) {
 		},
 	}
 
-	metrics := &metricsConf.DummyMetricsEngine{}
+	metrics := &metricsConf.NilMetricsEngine{}
 	for _, test := range testCases {
 		response := doRequest(makeRequest(test.uri, test.existingSyncs), metrics,
 			test.syncersBidderNameToKey, test.gdprAllowsHostCookies, test.gdprReturnsError, test.gdprMalformed)
@@ -379,7 +379,7 @@ func TestOptedOut(t *testing.T) {
 	cookie.SetOptOut(true)
 	addCookie(request, cookie)
 	syncersBidderNameToKey := map[string]string{"pubmatic": "pubmatic"}
-	metrics := &metricsConf.DummyMetricsEngine{}
+	metrics := &metricsConf.NilMetricsEngine{}
 	response := doRequest(request, metrics, syncersBidderNameToKey, true, false, false)
 
 	assert.Equal(t, http.StatusUnauthorized, response.Code)
@@ -573,7 +573,7 @@ func (g *mockPermsSetUID) BidderSyncAllowed(ctx context.Context, bidder openrtb_
 	return false, nil
 }
 
-func (g *mockPermsSetUID) AuctionActivitiesAllowed(ctx context.Context, bidder openrtb_ext.BidderName, PublisherID string, gdprSignal gdpr.Signal, consent string, weakVendorEnforcement bool) (allowBidRequest bool, passGeo bool, passID bool, err error) {
+func (g *mockPermsSetUID) AuctionActivitiesAllowed(ctx context.Context, bidderCoreName openrtb_ext.BidderName, bidder openrtb_ext.BidderName, PublisherID string, gdprSignal gdpr.Signal, consent string, aliasGVLIDs map[string]uint16) (allowBidReq bool, passGeo bool, passID bool, err error) {
 	return g.personalInfoAllowed, g.personalInfoAllowed, g.personalInfoAllowed, nil
 }
 
