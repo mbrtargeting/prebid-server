@@ -89,16 +89,16 @@ func (a *adapter) MakeBids(bidRequest *openrtb2.BidRequest, requestData *adapter
 			MType: markupType,
 		}
 
-		if bid.DSA != nil {
-			dsaJson, err := json.Marshal(bidExt{
-				bid.DSA, "test-abc-value",
-			})
-			if err != nil {
-				errors = append(errors, err)
-			} else {
-				openRtbBid.Ext = dsaJson
-			}
+		//if bid.DSA != nil {
+		dsaJson, err := json.Marshal(bidExt{
+			nil, "test-abc-value",
+		})
+		if err != nil {
+			errors = append(errors, err)
+		} else {
+			openRtbBid.Ext = dsaJson
 		}
+		//}
 
 		bidderResponse.Bids = append(bidderResponse.Bids, &adapters.TypedBid{
 			Bid:     &openRtbBid,
