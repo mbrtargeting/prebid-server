@@ -37,6 +37,7 @@ type bidResponse struct {
 
 type bidExt struct {
 	DSA json.RawMessage `json:"dsa,omitempty"`
+	Abc string          `json:"abc,omitempty"`
 }
 
 func (b *bidResponse) resolveMediaType() (mt openrtb2.MarkupType, bt openrtb_ext.BidType, err error) {
@@ -89,7 +90,9 @@ func (a *adapter) MakeBids(bidRequest *openrtb2.BidRequest, requestData *adapter
 		}
 
 		if bid.DSA != nil {
-			dsaJson, err := json.Marshal(bidExt{bid.DSA})
+			dsaJson, err := json.Marshal(bidExt{
+				bid.DSA, "test-abc-value",
+			})
 			if err != nil {
 				errors = append(errors, err)
 			} else {
@@ -100,10 +103,17 @@ func (a *adapter) MakeBids(bidRequest *openrtb2.BidRequest, requestData *adapter
 		bidderResponse.Bids = append(bidderResponse.Bids, &adapters.TypedBid{
 			Bid:     &openRtbBid,
 			BidType: bidType,
+			BidMeta: &openrtb_ext.ExtBidPrebidMeta{
+				RendererData: createRendererData(),
+			},
 		})
 	}
 
 	return bidderResponse, errors
+}
+
+func createRendererData() json.RawMessage {
+	return json.RawMessage(`{"thing": "that", "foo": 123}`)
 }
 
 func (a *adapter) MakeRequests(bidRequest *openrtb2.BidRequest, extraRequestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
