@@ -2,8 +2,8 @@ package stroeerCore
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 
@@ -19,101 +19,57 @@ type adapter struct {
 	Server config.Server
 }
 
-type response struct {
-	Bids []bidResponse `json:"bids"`
-}
+func (a *adapter) MakeBids(request *openrtb2.BidRequest, _ *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
+	var errs []error
 
-type bidResponse struct {
-	ID     string          `json:"id"`
-	BidID  string          `json:"bidId"`
-	CPM    float64         `json:"cpm"`
-	Width  int64           `json:"width"`
-	Height int64           `json:"height"`
-	Ad     string          `json:"ad"`
-	CrID   string          `json:"crid"`
-	Mtype  string          `json:"mtype"`
-	DSA    json.RawMessage `json:"dsa"`
-}
-
-type bidExt struct {
-	DSA json.RawMessage `json:"dsa,omitempty"`
-	Abc string          `json:"abc,omitempty"`
-}
-
-func (b *bidResponse) resolveMediaType() (mt openrtb2.MarkupType, bt openrtb_ext.BidType, err error) {
-	switch b.Mtype {
-	case "banner":
-		return openrtb2.MarkupBanner, openrtb_ext.BidTypeBanner, nil
-	case "video":
-		return openrtb2.MarkupVideo, openrtb_ext.BidTypeVideo, nil
+	switch responseData.StatusCode {
+	case http.StatusNoContent:
+		return nil, nil
+	case http.StatusBadRequest:
+		return nil, []error{&errortypes.BadInput{
+			Message: "unexpected status code: " + strconv.Itoa(responseData.StatusCode),
+		}}
+	case http.StatusOK:
+		break
 	default:
-		return mt, bt, fmt.Errorf("unable to determine media type for bid with id \"%s\"", b.BidID)
-	}
-}
-
-func (a *adapter) MakeBids(bidRequest *openrtb2.BidRequest, requestData *adapters.RequestData, responseData *adapters.ResponseData) (*adapters.BidderResponse, []error) {
-	if responseData.StatusCode != http.StatusOK {
 		return nil, []error{&errortypes.BadServerResponse{
-			Message: fmt.Sprintf("Unexpected http status code: %d.", responseData.StatusCode),
+			Message: "unexpected status code: " + strconv.Itoa(responseData.StatusCode),
 		}}
 	}
 
-	var errors []error
-	stroeerResponse := response{}
-
-	if err := jsonutil.Unmarshal(responseData.Body, &stroeerResponse); err != nil {
-		errors = append(errors, err)
-		return nil, errors
+	var bidResponse openrtb2.BidResponse
+	err := jsonutil.Unmarshal(responseData.Body, &bidResponse)
+	if err != nil {
+		return nil, []error{&errortypes.BadServerResponse{
+			Message: err.Error(),
+		}}
 	}
 
-	bidderResponse := adapters.NewBidderResponseWithBidsCapacity(len(stroeerResponse.Bids))
-	bidderResponse.Currency = "EUR"
+	response := adapters.NewBidderResponseWithBidsCapacity(len(request.Imp))
 
-	for _, bid := range stroeerResponse.Bids {
-		markupType, bidType, err := bid.resolveMediaType()
-		if err != nil {
-			errors = append(errors, &errortypes.BadServerResponse{
-				Message: fmt.Sprintf("Bid media type error: %s", err.Error()),
+	for _, seatBid := range bidResponse.SeatBid {
+		for i := range seatBid.Bid {
+			response.Bids = append(response.Bids, &adapters.TypedBid{
+				Bid:     &seatBid.Bid[i],
+				BidType: getMediaTypeForImp(seatBid.Bid[i].ImpID, request.Imp),
 			})
-			continue
 		}
-
-		openRtbBid := openrtb2.Bid{
-			ID:    bid.ID,
-			ImpID: bid.BidID,
-			W:     bid.Width,
-			H:     bid.Height,
-			Price: bid.CPM,
-			AdM:   bid.Ad,
-			CrID:  bid.CrID,
-			MType: markupType,
-		}
-
-		//if bid.DSA != nil {
-		dsaJson, err := json.Marshal(bidExt{
-			nil, "test-abc-value",
-		})
-		if err != nil {
-			errors = append(errors, err)
-		} else {
-			openRtbBid.Ext = dsaJson
-		}
-		//}
-
-		bidderResponse.Bids = append(bidderResponse.Bids, &adapters.TypedBid{
-			Bid:     &openRtbBid,
-			BidType: bidType,
-			BidMeta: &openrtb_ext.ExtBidPrebidMeta{
-				RendererData: createRendererData(),
-			},
-		})
 	}
 
-	return bidderResponse, errors
+	return response, errs
 }
 
-func createRendererData() json.RawMessage {
-	return json.RawMessage(`{"thing": "that", "foo": 123}`)
+func getMediaTypeForImp(impID string, imps []openrtb2.Imp) openrtb_ext.BidType {
+	for _, imp := range imps {
+		if imp.ID == impID {
+			if imp.Banner != nil {
+				return openrtb_ext.BidTypeBanner
+			} else if imp.Video != nil {
+				return openrtb_ext.BidTypeVideo
+			}
+		}
+	}
+	return openrtb_ext.BidTypeBanner
 }
 
 func (a *adapter) MakeRequests(bidRequest *openrtb2.BidRequest, extraRequestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {
