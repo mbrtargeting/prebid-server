@@ -167,7 +167,7 @@ func adjustAuctionForCore(auc *auction) {
 					newWinner.BidTargets["hb_pb"] = "0.0"
 					newWinner.BidTargets["hb_size"] = fmt.Sprintf("%dx%d", newWinner.Bid.W, newWinner.Bid.H)
 
-					newWinner.BidTargets["dr"] = dr.(string)
+					newWinner.BidTargets["dr"] = strconv.FormatBool(dr.(bool))
 
 					auc.winningBids[impId] = newWinner
 				}
