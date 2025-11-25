@@ -182,6 +182,7 @@ var coreBidderNames []BidderName = []BidderName{
 	BidderMobfoxpb,
 	BidderMobileFuse,
 	BidderMobkoi,
+	BidderMockBidder,
 	BidderMotorik,
 	BidderNativery,
 	BidderNativo,
@@ -556,6 +557,7 @@ const (
 	BidderMobfoxpb          BidderName = "mobfoxpb"
 	BidderMobileFuse        BidderName = "mobilefuse"
 	BidderMobkoi            BidderName = "mobkoi"
+	BidderMockBidder        BidderName = "mockBidder"
 	BidderMotorik           BidderName = "motorik"
 	BidderNativery          BidderName = "nativery"
 	BidderNativo            BidderName = "nativo"
@@ -771,7 +773,7 @@ func NewBidderParamsValidator(schemaDirectory string) (BidderParamValidator, err
 	for _, fileInfo := range fileInfos {
 		bidderName := strings.TrimSuffix(fileInfo.Name(), ".json")
 		if _, ok := bidderMap[bidderName]; !ok {
-			return nil, fmt.Errorf("File %s/%s does not match a valid BidderName.", schemaDirectory, fileInfo.Name())
+			return nil, fmt.Errorf("File %s/%s does not match a valid BidderName: %s", schemaDirectory, fileInfo.Name(), bidderName)
 		}
 
 		toOpen, err := paramsValidator.abs(filepath.Join(schemaDirectory, fileInfo.Name()))
