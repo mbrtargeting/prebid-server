@@ -496,6 +496,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 			if targData.includeWinners || targData.includeBidderKeys || targData.includeFormat {
 				targData.setTargeting(auc, env, bidCategory, r.Account.TruncateTargetAttribute, multiBidMap)
+				adjustAuctionForCore(auc)
 			}
 		}
 		bidResponseExt = e.makeExtBidResponse(adapterBids, adapterExtra, *r, responseDebugAllow, requestExtPrebid.Passthrough, fledge, errs)

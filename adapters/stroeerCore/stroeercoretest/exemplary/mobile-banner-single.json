@@ -184,7 +184,10 @@
           "h": 60,
           "crid": "XYZijk",
           "mtype": 1,
-          "adomain": ["test.com", "example.com"]
+          "adomain": ["test.com", "example.com"],
+          "ext": {
+            "dr": true
+          }
         },
         "type": "banner"
       }]

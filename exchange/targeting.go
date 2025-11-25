@@ -1,11 +1,11 @@
 package exchange
 
 import (
+	"encoding/json"
 	"fmt"
-	"strconv"
-
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
+	"strconv"
 )
 
 const MaxKeyLength = 20
@@ -136,4 +136,42 @@ func getMultiBidMeta(multiBidMap map[string]openrtb_ext.ExtMultiBid, bidder stri
 	}
 
 	return "", openrtb_ext.DefaultBidLimit
+}
+
+func adjustAuctionForCore(auc *auction) {
+	const StroeerCore = "stroeerCore"
+	for impId, bids := range auc.allBidsByBidder {
+		winnerBid := auc.winningBids[impId]
+		if winnerBid.AdapterCode != StroeerCore {
+			stroeerCoreBid, ok := bids[StroeerCore]
+			if ok {
+				var bidExt map[string]any
+
+				if err := json.Unmarshal(stroeerCoreBid[0].Bid.Ext, &bidExt); err != nil {
+					// TODO: log here
+					return
+				}
+
+				var dr = bidExt["dr"]
+				if dr != "" {
+					winnerBid.BidTargets = make(map[string]string)
+
+					newWinner := stroeerCoreBid[0]
+
+					newWinner.OriginalBidCPM = 0.0
+					newWinner.Bid.Price = 0.0
+
+					newWinner.BidTargets = make(map[string]string)
+					newWinner.BidTargets["hb_bidder"] = StroeerCore
+					newWinner.BidTargets["hb_env"] = "mobile-app"
+					newWinner.BidTargets["hb_pb"] = "0.0"
+					newWinner.BidTargets["hb_size"] = fmt.Sprintf("%dx%d", newWinner.Bid.W, newWinner.Bid.H)
+
+					newWinner.BidTargets["dr"] = dr.(string)
+
+					auc.winningBids[impId] = newWinner
+				}
+			}
+		}
+	}
 }

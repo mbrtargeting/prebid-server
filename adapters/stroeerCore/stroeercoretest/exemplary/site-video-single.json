@@ -110,7 +110,10 @@
           "adm": "<vast><div>video</div></vast>",
           "crid": "wasd",
           "mtype": 2,
-          "adomain": ["example.com"]
+          "adomain": ["example.com"],
+          "ext": {
+            "dr": true
+          }
         },
         "type": "video"
       }]
