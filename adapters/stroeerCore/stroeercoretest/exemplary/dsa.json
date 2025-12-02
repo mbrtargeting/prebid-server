@@ -179,6 +179,7 @@
             "crid": "wasd",
             "mtype": 1,
             "ext": {
+              "dr": true,
               "dsa": {
                 "behalf": "Advertiser A",
                 "paid": "Advertiser B",

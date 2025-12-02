@@ -175,7 +175,10 @@
           "w": 300,
           "h": 200,
           "crid": "qwert",
-          "mtype": 1
+          "mtype": 1,
+          "ext": {
+            "dr": true
+          }
         },
         "type": "banner"
       }]

@@ -141,21 +141,19 @@ func getMultiBidMeta(multiBidMap map[string]openrtb_ext.ExtMultiBid, bidder stri
 func adjustAuctionForCore(auc *auction) {
 	const StroeerCore = "stroeerCore"
 	for impId, bids := range auc.allBidsByBidder {
-		winnerBid := auc.winningBids[impId]
-		if winnerBid.AdapterCode != StroeerCore {
-			stroeerCoreBid, ok := bids[StroeerCore]
-			if ok {
-				var bidExt map[string]any
+		stroeerCoreBid, ok := bids[StroeerCore]
+		if ok {
+			var bidExt map[string]any
 
-				if err := json.Unmarshal(stroeerCoreBid[0].Bid.Ext, &bidExt); err != nil {
-					// TODO: log here
-					return
-				}
+			if err := json.Unmarshal(stroeerCoreBid[0].Bid.Ext, &bidExt); err != nil {
+				// TODO: log here
+				return
+			}
 
-				var dr = bidExt["dr"]
-				if dr != "" {
-					winnerBid.BidTargets = make(map[string]string)
-
+			var dr = bidExt["dr"]
+			if dr != "" {
+				winnerBid := auc.winningBids[impId]
+				if winnerBid.AdapterCode != StroeerCore {
 					newWinner := stroeerCoreBid[0]
 
 					newWinner.OriginalBidCPM = 0.0
@@ -170,6 +168,9 @@ func adjustAuctionForCore(auc *auction) {
 					newWinner.BidTargets["dr"] = strconv.FormatBool(dr.(bool))
 
 					auc.winningBids[impId] = newWinner
+				} else {
+					winnerBid.BidTargets["dr"] = strconv.FormatBool(dr.(bool))
+					winnerBid.BidTargets["hb_pb"] = "0.0"
 				}
 			}
 		}
