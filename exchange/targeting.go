@@ -169,6 +169,8 @@ func adjustAuctionForCore(auc *auction) {
 
 					auc.winningBids[impId] = newWinner
 				} else {
+					winnerBid.OriginalBidCPM = 0.0
+					winnerBid.Bid.Price = 0.0
 					winnerBid.BidTargets["dr"] = strconv.FormatBool(dr.(bool))
 					winnerBid.BidTargets["hb_pb"] = "0.0"
 				}
