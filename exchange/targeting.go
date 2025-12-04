@@ -151,7 +151,7 @@ func adjustAuctionForCore(auc *auction) {
 			}
 
 			var dr = bidExt["dr"]
-			if dr != "" {
+			if dr == true {
 				winnerBid := auc.winningBids[impId]
 				if winnerBid.AdapterCode != StroeerCore {
 					newWinner := stroeerCoreBid[0]
@@ -164,14 +164,13 @@ func adjustAuctionForCore(auc *auction) {
 					newWinner.BidTargets["hb_env"] = "mobile-app"
 					newWinner.BidTargets["hb_pb"] = "0.0"
 					newWinner.BidTargets["hb_size"] = fmt.Sprintf("%dx%d", newWinner.Bid.W, newWinner.Bid.H)
-
-					newWinner.BidTargets["dr"] = strconv.FormatBool(dr.(bool))
+					newWinner.BidTargets["dr"] = "true"
 
 					auc.winningBids[impId] = newWinner
 				} else {
 					winnerBid.OriginalBidCPM = 0.0
 					winnerBid.Bid.Price = 0.0
-					winnerBid.BidTargets["dr"] = strconv.FormatBool(dr.(bool))
+					winnerBid.BidTargets["dr"] = "true"
 					winnerBid.BidTargets["hb_pb"] = "0.0"
 				}
 			}
