@@ -173,10 +173,7 @@
             "h": 60,
             "crid": "qwert",
             "mtype": 1,
-            "adomain": ["test.com"],
-            "ext": {
-              "dr": true
-            }
+            "adomain": ["test.com"]
           },
           "type": "banner"
         },
@@ -190,10 +187,8 @@
             "h": 250,
             "crid": "wasd",
             "mtype": 1,
-            "adomain": ["example.com"],
-            "ext": {
-              "dr": true
-            }
+            "adomain": ["example.com"]
+
           },
           "type": "banner"
         }

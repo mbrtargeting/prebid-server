@@ -24,21 +24,18 @@ type response struct {
 }
 
 type bidResponse struct {
-	ID      string          `json:"id"`
-	BidID   string          `json:"bidId"`
-	CPM     float64         `json:"cpm"`
-	Width   int64           `json:"width"`
-	Height  int64           `json:"height"`
-	Ad      string          `json:"ad"`
-	CrID    string          `json:"crid"`
-	Mtype   string          `json:"mtype"`
+	ID     string  `json:"id"`
+	BidID  string  `json:"bidId"`
+	CPM    float64 `json:"cpm"`
+	Width  int64   `json:"width"`
+	Height int64   `json:"height"`
+	Ad     string  `json:"ad"`
+	CrID   string  `json:"crid"`
+	Mtype  string  `json:"mtype"`
+	// Deprecated: The dsa will move to the bid response's ext.
 	DSA     json.RawMessage `json:"dsa"`
 	ADomain []string        `json:"adomain,omitempty"`
-}
-
-type bidExt struct {
-	DSA json.RawMessage `json:"dsa,omitempty"`
-	DR  bool            `json:"dr,omitempty"`
+	Ext     json.RawMessage `json:"ext,omitempty"`
 }
 
 func (b *bidResponse) resolveMediaType() (mt openrtb2.MarkupType, bt openrtb_ext.BidType, err error) {
@@ -89,16 +86,7 @@ func (a *adapter) MakeBids(bidRequest *openrtb2.BidRequest, requestData *adapter
 			CrID:    bid.CrID,
 			MType:   markupType,
 			ADomain: bid.ADomain,
-		}
-
-		ext, err := json.Marshal(bidExt{
-			DSA: bid.DSA,
-			DR:  true,
-		})
-		if err != nil {
-			errors = append(errors, err)
-		} else {
-			openRtbBid.Ext = ext
+			Ext:     getBidExt(bid),
 		}
 
 		bidderResponse.Bids = append(bidderResponse.Bids, &adapters.TypedBid{
@@ -108,6 +96,19 @@ func (a *adapter) MakeBids(bidRequest *openrtb2.BidRequest, requestData *adapter
 	}
 
 	return bidderResponse, errors
+}
+
+func getBidExt(bid bidResponse) json.RawMessage {
+	if bid.DSA == nil {
+		return bid.Ext
+	}
+	extMap := map[string]json.RawMessage{}
+	if bid.Ext != nil {
+		_ = jsonutil.Unmarshal(bid.Ext, &extMap)
+	}
+	extMap["dsa"] = bid.DSA
+	ext, _ := json.Marshal(extMap)
+	return ext
 }
 
 func (a *adapter) MakeRequests(bidRequest *openrtb2.BidRequest, extraRequestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {

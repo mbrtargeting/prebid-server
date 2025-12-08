@@ -128,10 +128,7 @@
           "h": 60,
           "crid": "wasd",
           "mtype": 1,
-          "adomain": ["test.com"],
-          "ext": {
-            "dr": true
-          }
+          "adomain": ["test.com"]
         },
         "type": "banner"
       }]
