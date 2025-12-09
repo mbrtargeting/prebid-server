@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "MockBidder Adapter Params",
-  "description": "A schema which validates params accepted by the MockBidder adapter",
+  "title": "Mock Stroeer Bidder Adapter Params",
+  "description": "A schema which validates params accepted by the Mock Stroeer Bidder adapter",
   "type": "object",
   "properties": {
     "sid": {

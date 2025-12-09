@@ -164,7 +164,7 @@ import (
 	"github.com/prebid/prebid-server/v3/adapters/mobfoxpb"
 	"github.com/prebid/prebid-server/v3/adapters/mobilefuse"
 	"github.com/prebid/prebid-server/v3/adapters/mobkoi"
-	"github.com/prebid/prebid-server/v3/adapters/mockBidder"
+	"github.com/prebid/prebid-server/v3/adapters/mockStroeerBidder"
 	"github.com/prebid/prebid-server/v3/adapters/motorik"
 	"github.com/prebid/prebid-server/v3/adapters/nativery"
 	"github.com/prebid/prebid-server/v3/adapters/nativo"
@@ -435,7 +435,7 @@ func newAdapterBuilders() map[openrtb_ext.BidderName]adapters.Builder {
 		openrtb_ext.BidderMobfoxpb:          mobfoxpb.Builder,
 		openrtb_ext.BidderMobileFuse:        mobilefuse.Builder,
 		openrtb_ext.BidderMobkoi:            mobkoi.Builder,
-		openrtb_ext.BidderMockBidder:        mockBidder.Builder,
+		openrtb_ext.BidderMockStroeerBidder: mockStroeerBidder.Builder,
 		openrtb_ext.BidderMotorik:           motorik.Builder,
 		openrtb_ext.BidderNativery:          nativery.Builder,
 		openrtb_ext.BidderNativo:            nativo.Builder,

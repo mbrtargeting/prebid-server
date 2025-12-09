@@ -1,4 +1,4 @@
-package mockBidder
+package mockStroeerBidder
 
 import (
 	"encoding/json"
@@ -14,8 +14,8 @@ func TestValidParams(t *testing.T) {
 	}
 
 	for _, validParam := range validParams {
-		if err := validator.Validate(openrtb_ext.BidderMockBidder, json.RawMessage(validParam)); err != nil {
-			t.Errorf("Schema rejected mockBidder params: %s", validParam)
+		if err := validator.Validate(openrtb_ext.BidderMockStroeerBidder, json.RawMessage(validParam)); err != nil {
+			t.Errorf("Schema rejected mockStroeerBidder params: %s", validParam)
 		}
 	}
 }
@@ -27,7 +27,7 @@ func TestInvalidParams(t *testing.T) {
 	}
 
 	for _, invalidParam := range invalidParams {
-		if err := validator.Validate(openrtb_ext.BidderMockBidder, json.RawMessage(invalidParam)); err == nil {
+		if err := validator.Validate(openrtb_ext.BidderMockStroeerBidder, json.RawMessage(invalidParam)); err == nil {
 			t.Errorf("Schema allowed unexpected params: %s", invalidParam)
 		}
 	}

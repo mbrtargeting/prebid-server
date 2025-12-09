@@ -1,4 +1,4 @@
-package mockBidder
+package mockStroeerBidder
 
 import (
 	"encoding/json"
