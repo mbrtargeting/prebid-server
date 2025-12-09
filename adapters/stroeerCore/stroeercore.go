@@ -24,18 +24,18 @@ type response struct {
 }
 
 type bidResponse struct {
-	ID     string  `json:"id"`
-	BidID  string  `json:"bidId"`
-	CPM    float64 `json:"cpm"`
-	Width  int64   `json:"width"`
-	Height int64   `json:"height"`
-	Ad     string  `json:"ad"`
-	CrID   string  `json:"crid"`
-	Mtype  string  `json:"mtype"`
-	// Deprecated: The dsa will move to the bid response's ext.
-	DSA     json.RawMessage `json:"dsa"`
+	ID      string          `json:"id"`
+	BidID   string          `json:"bidId"`
+	CPM     float64         `json:"cpm"`
+	Width   int64           `json:"width"`
+	Height  int64           `json:"height"`
+	Ad      string          `json:"ad"`
+	CrID    string          `json:"crid"`
+	Mtype   string          `json:"mtype"`
 	ADomain []string        `json:"adomain,omitempty"`
 	Ext     json.RawMessage `json:"ext,omitempty"`
+	// Deprecated: The dsa will move to the bid response's ext.
+	DSA json.RawMessage `json:"dsa"`
 }
 
 func (b *bidResponse) resolveMediaType() (mt openrtb2.MarkupType, bt openrtb_ext.BidType, err error) {
