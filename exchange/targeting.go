@@ -146,7 +146,6 @@ func adjustAuctionForCore(auc *auction) {
 			var bidExt map[string]any
 
 			if err := json.Unmarshal(stroeerCoreBid[0].Bid.Ext, &bidExt); err != nil {
-				// TODO: log here
 				return
 			}
 
@@ -154,25 +153,21 @@ func adjustAuctionForCore(auc *auction) {
 			if dr == true {
 				winnerBid := auc.winningBids[impId]
 				if winnerBid.AdapterCode != StroeerCore {
-					newWinner := stroeerCoreBid[0]
+					hbEnv := winnerBid.BidTargets["hb_env"]
 
-					newWinner.OriginalBidCPM = 0.0
-					newWinner.Bid.Price = 0.0
+					winnerBid = stroeerCoreBid[0]
+					winnerBid.BidTargets = make(map[string]string)
+					winnerBid.BidTargets["hb_bidder"] = StroeerCore
+					winnerBid.BidTargets["hb_env"] = hbEnv
+					winnerBid.BidTargets["hb_size"] = fmt.Sprintf("%dx%d", winnerBid.Bid.W, winnerBid.Bid.H)
 
-					newWinner.BidTargets = make(map[string]string)
-					newWinner.BidTargets["hb_bidder"] = StroeerCore
-					newWinner.BidTargets["hb_env"] = "mobile-app"
-					newWinner.BidTargets["hb_pb"] = "0.0"
-					newWinner.BidTargets["hb_size"] = fmt.Sprintf("%dx%d", newWinner.Bid.W, newWinner.Bid.H)
-					newWinner.BidTargets["dr"] = "true"
-
-					auc.winningBids[impId] = newWinner
-				} else {
-					winnerBid.OriginalBidCPM = 0.0
-					winnerBid.Bid.Price = 0.0
-					winnerBid.BidTargets["dr"] = "true"
-					winnerBid.BidTargets["hb_pb"] = "0.0"
+					auc.winningBids[impId] = winnerBid
 				}
+
+				winnerBid.OriginalBidCPM = 0.0
+				winnerBid.Bid.Price = 0.0
+				winnerBid.BidTargets["hb_pb"] = "0.0"
+				winnerBid.BidTargets["dr"] = "true"
 			}
 		}
 	}
