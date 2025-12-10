@@ -155,7 +155,11 @@ func adjustAuctionForCore(auc *auction) {
 				if winnerBid.AdapterCode != StroeerCore {
 					hbEnv := winnerBid.BidTargets["hb_env"]
 
+					// Clear the original winner's targeting.
+					winnerBid.BidTargets = make(map[string]string)
+
 					winnerBid = stroeerCoreBid[0]
+
 					winnerBid.BidTargets = make(map[string]string)
 					winnerBid.BidTargets["hb_bidder"] = StroeerCore
 					winnerBid.BidTargets["hb_env"] = hbEnv
