@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -329,6 +330,38 @@ func (a *auction) doCache(ctx context.Context, cache prebid_cache_client.Client,
 		}
 	}
 	return errs
+}
+
+func (a *auction) adjustForCore() {
+	const StroeerCore = "stroeerCore"
+
+	for impId, bids := range a.allBidsByBidder {
+		stroeerCoreBids, ok := bids[StroeerCore]
+		if ok {
+			var bidExt map[string]any
+
+			stroeerCoreBid := stroeerCoreBids[0]
+
+			if err := json.Unmarshal(stroeerCoreBid.Bid.Ext, &bidExt); err != nil {
+				return
+			}
+
+			var dr = bidExt["dr"]
+			if dr == true {
+				winnerBid := a.winningBids[impId]
+				if winnerBid.AdapterCode != StroeerCore {
+					winnerBid = stroeerCoreBid
+					a.winningBids[impId] = winnerBid
+				}
+
+				winnerBid.OriginalBidCPM = 0.0
+				winnerBid.Bid.Price = 0.0
+
+				winnerBid.BidTargets = make(map[string]string, 10)
+				winnerBid.BidTargets["dr"] = "true"
+			}
+		}
+	}
 }
 
 // makeVAST returns some VAST XML for the given bid. If AdM is defined,

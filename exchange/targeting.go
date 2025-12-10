@@ -1,7 +1,6 @@
 package exchange
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/prebid/openrtb/v20/openrtb2"
 	"github.com/prebid/prebid-server/v3/openrtb_ext"
@@ -67,7 +66,13 @@ func (targData *targetData) setTargeting(auc *auction, env string, categoryMappi
 
 				bidHasDeal := len(topBid.Bid.DealID) > 0
 
-				targets := make(map[string]string, 10)
+				var targets map[string]string
+				if topBid.BidTargets == nil {
+					targets = make(map[string]string, 10)
+				} else {
+					targets = topBid.BidTargets
+				}
+
 				if cpm, ok := auc.roundedPrices[topBid]; ok {
 					targData.addKeys(targets, openrtb_ext.PbKey, cpm, targetingBidderCode, isOverallWinner, truncateTargetAttr, bidHasDeal)
 				}
@@ -136,43 +141,4 @@ func getMultiBidMeta(multiBidMap map[string]openrtb_ext.ExtMultiBid, bidder stri
 	}
 
 	return "", openrtb_ext.DefaultBidLimit
-}
-
-func adjustAuctionForCore(auc *auction) {
-	const StroeerCore = "stroeerCore"
-	for impId, bids := range auc.allBidsByBidder {
-		stroeerCoreBid, ok := bids[StroeerCore]
-		if ok {
-			var bidExt map[string]any
-
-			if err := json.Unmarshal(stroeerCoreBid[0].Bid.Ext, &bidExt); err != nil {
-				return
-			}
-
-			var dr = bidExt["dr"]
-			if dr == true {
-				winnerBid := auc.winningBids[impId]
-				if winnerBid.AdapterCode != StroeerCore {
-					hbEnv := winnerBid.BidTargets["hb_env"]
-
-					// Clear the original winner's targeting.
-					winnerBid.BidTargets = make(map[string]string)
-
-					winnerBid = stroeerCoreBid[0]
-
-					winnerBid.BidTargets = make(map[string]string)
-					winnerBid.BidTargets["hb_bidder"] = StroeerCore
-					winnerBid.BidTargets["hb_env"] = hbEnv
-					winnerBid.BidTargets["hb_size"] = fmt.Sprintf("%dx%d", winnerBid.Bid.W, winnerBid.Bid.H)
-
-					auc.winningBids[impId] = winnerBid
-				}
-
-				winnerBid.OriginalBidCPM = 0.0
-				winnerBid.Bid.Price = 0.0
-				winnerBid.BidTargets["hb_pb"] = "0.0"
-				winnerBid.BidTargets["dr"] = "true"
-			}
-		}
-	}
 }

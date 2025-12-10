@@ -1,0 +1,209 @@
+{
+  "incomingRequest": {
+    "ortbRequest": {
+      "id": "some-request-id",
+      "app": {
+        "id": "some-app"
+      },
+      "imp": [
+        {
+          "id": "some-imp-id",
+          "banner": {
+            "format": [
+              {
+                "w": 300,
+                "h": 250
+              }
+            ]
+          },
+          "ext": {
+            "prebid": {
+              "bidder": {
+                "appnexus": {
+                  "placementId": 1
+                },
+                "stroeerCore": {
+                  "sid": "323"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "ext": {
+        "prebid": {
+          "targeting": {
+            "pricegranularity": {
+              "precision": 2,
+              "ranges": [
+                {
+                  "min": 0,
+                  "max": 10,
+                  "increment": 0.1
+                }
+              ]
+            },
+            "includewinners": true,
+            "includebidderkeys": false
+          }
+        }
+      }
+    }
+  },
+  "outgoingRequests": {
+    "appnexus": {
+      "expectRequest": {
+        "ortbRequest": {
+          "id": "some-request-id",
+          "app": {
+            "id": "some-app"
+          },
+          "imp": [
+            {
+              "id": "some-imp-id",
+              "banner": {
+                "format": [
+                  {
+                    "w": 300,
+                    "h": 250
+                  }
+                ]
+              },
+              "ext": {
+                "bidder": {
+                  "placementId": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      "mockResponse": {
+        "pbsSeatBids": [
+          {
+            "pbsBids": [
+              {
+                "ortbBid": {
+                  "id": "apn-bid",
+                  "impid": "some-imp-id",
+                  "price": 1.95,
+                  "w": 300,
+                  "h": 250,
+                  "crid": "creative-1"
+                },
+                "bidType": "banner"
+              }
+            ],
+            "seat": "appnexus"
+          }
+        ]
+      }
+    },
+    "stroeerCore": {
+      "expectRequest": {
+        "ortbRequest": {
+          "id": "some-request-id",
+          "app": {
+            "id": "some-app"
+          },
+          "imp": [
+            {
+              "id": "some-imp-id",
+              "banner": {
+                "format": [
+                  {
+                    "w": 300,
+                    "h": 250
+                  }
+                ]
+              },
+              "ext": {
+                "bidder": {
+                  "sid": "323"
+                }
+              }
+            }
+          ]
+        }
+      },
+      "mockResponse": {
+        "pbsSeatBids": [
+          {
+            "pbsBids": [
+              {
+                "ortbBid": {
+                  "id": "some-bid",
+                  "impid": "some-imp-id",
+                  "price": 0.00001,
+                  "w": 300,
+                  "h": 250,
+                  "crid": "creative-4",
+                  "ext": {
+                    "dr": true
+                  }
+                },
+                "bidType": "banner"
+              }
+            ],
+            "seat": "stroeerCore"
+          }
+        ]
+      }
+    }
+  },
+  "response": {
+    "bids": {
+      "id": "some-request-id",
+      "seatbid": [
+        {
+          "seat": "appnexus",
+          "bid": [{
+            "id": "apn-bid",
+            "impid": "some-imp-id",
+            "price": 1.95,
+            "w": 300,
+            "h": 250,
+            "crid": "creative-1",
+            "ext": {
+              "origbidcpm": 1.95,
+              "prebid": {
+                "meta": {
+                },
+                "type": "banner"
+              }
+            }
+          }]
+        },
+        {
+          "seat": "stroeerCore",
+          "bid": [{
+            "id": "some-bid",
+            "impid": "some-imp-id",
+            "price": 0.0,
+            "w": 300,
+            "h": 250,
+            "crid": "creative-4",
+            "ext": {
+              "dr": true,
+              "origbidcpm": 0.0,
+              "prebid": {
+                "meta": {
+                },
+                "targeting": {
+                  "hb_bidder": "stroeerCore",
+                  "hb_cache_host": "www.pbcserver.com",
+                  "hb_cache_path": "/pbcache/endpoint",
+                  "hb_pb": "0.00",
+                  "hb_size": "300x250",
+                  "hb_env": "mobile-app",
+                  "dr": "true"
+                },
+                "type": "banner"
+              }
+            }
+          }]
+        }
+      ]
+    }
+  }
+}

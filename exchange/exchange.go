@@ -463,6 +463,7 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 			// A non-nil auction is only needed if targeting is active. (It is used below this block to extract cache keys)
 			auc = newAuction(adapterBids, len(r.BidRequestWrapper.Imp), targData.preferDeals)
+			auc.adjustForCore()
 			auc.validateAndUpdateMultiBid(adapterBids, targData.preferDeals, r.Account.DefaultBidLimit)
 			auc.setRoundedPrices(*targData, r.Account)
 
@@ -496,7 +497,6 @@ func (e *exchange) HoldAuction(ctx context.Context, r *AuctionRequest, debugLog 
 
 			if targData.includeWinners || targData.includeBidderKeys || targData.includeFormat {
 				targData.setTargeting(auc, env, bidCategory, r.Account.TruncateTargetAttribute, multiBidMap)
-				adjustAuctionForCore(auc)
 			}
 		}
 		bidResponseExt = e.makeExtBidResponse(adapterBids, adapterExtra, *r, responseDebugAllow, requestExtPrebid.Passthrough, fledge, errs)
