@@ -7,11 +7,11 @@ import (
 
 	"github.com/prebid/openrtb/v20/openrtb2"
 
-	"github.com/prebid/prebid-server/v3/adapters"
-	"github.com/prebid/prebid-server/v3/config"
-	"github.com/prebid/prebid-server/v3/errortypes"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/util/jsonutil"
+	"github.com/prebid/prebid-server/v4/adapters"
+	"github.com/prebid/prebid-server/v4/config"
+	"github.com/prebid/prebid-server/v4/errortypes"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/util/jsonutil"
 )
 
 type adapter struct {
@@ -24,20 +24,18 @@ type response struct {
 }
 
 type bidResponse struct {
-	ID     string          `json:"id"`
-	BidID  string          `json:"bidId"`
-	CPM    float64         `json:"cpm"`
-	Width  int64           `json:"width"`
-	Height int64           `json:"height"`
-	Ad     string          `json:"ad"`
-	CrID   string          `json:"crid"`
-	Mtype  string          `json:"mtype"`
-	DSA    json.RawMessage `json:"dsa"`
-}
-
-type bidExt struct {
-	DSA json.RawMessage `json:"dsa,omitempty"`
-	Abc string          `json:"abc,omitempty"`
+	ID      string          `json:"id"`
+	BidID   string          `json:"bidId"`
+	CPM     float64         `json:"cpm"`
+	Width   int64           `json:"width"`
+	Height  int64           `json:"height"`
+	Ad      string          `json:"ad"`
+	CrID    string          `json:"crid"`
+	Mtype   string          `json:"mtype"`
+	ADomain []string        `json:"adomain,omitempty"`
+	Ext     json.RawMessage `json:"ext,omitempty"`
+	// Deprecated: The dsa will move to the bid response's ext.
+	DSA json.RawMessage `json:"dsa"`
 }
 
 func (b *bidResponse) resolveMediaType() (mt openrtb2.MarkupType, bt openrtb_ext.BidType, err error) {
@@ -79,41 +77,38 @@ func (a *adapter) MakeBids(bidRequest *openrtb2.BidRequest, requestData *adapter
 		}
 
 		openRtbBid := openrtb2.Bid{
-			ID:    bid.ID,
-			ImpID: bid.BidID,
-			W:     bid.Width,
-			H:     bid.Height,
-			Price: bid.CPM,
-			AdM:   bid.Ad,
-			CrID:  bid.CrID,
-			MType: markupType,
+			ID:      bid.ID,
+			ImpID:   bid.BidID,
+			W:       bid.Width,
+			H:       bid.Height,
+			Price:   bid.CPM,
+			AdM:     bid.Ad,
+			CrID:    bid.CrID,
+			MType:   markupType,
+			ADomain: bid.ADomain,
+			Ext:     getBidExt(bid),
 		}
-
-		//if bid.DSA != nil {
-		dsaJson, err := json.Marshal(bidExt{
-			nil, "test-abc-value",
-		})
-		if err != nil {
-			errors = append(errors, err)
-		} else {
-			openRtbBid.Ext = dsaJson
-		}
-		//}
 
 		bidderResponse.Bids = append(bidderResponse.Bids, &adapters.TypedBid{
 			Bid:     &openRtbBid,
 			BidType: bidType,
-			BidMeta: &openrtb_ext.ExtBidPrebidMeta{
-				RendererData: createRendererData(),
-			},
 		})
 	}
 
 	return bidderResponse, errors
 }
 
-func createRendererData() json.RawMessage {
-	return json.RawMessage(`{"thing": "that", "foo": 123}`)
+func getBidExt(bid bidResponse) json.RawMessage {
+	if bid.DSA == nil {
+		return bid.Ext
+	}
+	extMap := map[string]json.RawMessage{}
+	if bid.Ext != nil {
+		_ = jsonutil.Unmarshal(bid.Ext, &extMap)
+	}
+	extMap["dsa"] = bid.DSA
+	ext, _ := json.Marshal(extMap)
+	return ext
 }
 
 func (a *adapter) MakeRequests(bidRequest *openrtb2.BidRequest, extraRequestInfo *adapters.ExtraRequestInfo) ([]*adapters.RequestData, []error) {

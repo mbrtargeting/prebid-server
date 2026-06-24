@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/errortypes"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v4/errortypes"
+	"github.com/prebid/prebid-server/v4/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -189,8 +189,10 @@ func TestUserExt(t *testing.T) {
 
 func TestRebuildImp(t *testing.T) {
 	var (
-		prebid     = &ExtImpPrebid{IsRewardedInventory: openrtb2.Int8Ptr(1)}
-		prebidJson = json.RawMessage(`{"prebid":{"is_rewarded_inventory":1}}`)
+		prebid                   = &ExtImpPrebid{IsRewardedInventory: openrtb2.Int8Ptr(1)}
+		prebidJson               = json.RawMessage(`{"prebid":{"is_rewarded_inventory":1}}`)
+		prebidWithAdunitCode     = &ExtImpPrebid{AdUnitCode: "adunitcode"}
+		prebidWithAdunitCodeJson = json.RawMessage(`{"prebid":{"adunitcode":"adunitcode"}}`)
 	)
 
 	testCases := []struct {
@@ -218,6 +220,13 @@ func TestRebuildImp(t *testing.T) {
 			request:           openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "1"}}},
 			requestImpWrapper: []*ImpWrapper{{Imp: &openrtb2.Imp{ID: "2"}, impExt: &ImpExt{prebid: prebid, prebidDirty: true}}},
 			expectedRequest:   openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "2", Ext: prebidJson}}},
+			expectedAccessed:  true,
+		},
+		{
+			description:       "One - Accessed - Dirty - AdUnitCode",
+			request:           openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "1"}}},
+			requestImpWrapper: []*ImpWrapper{{Imp: &openrtb2.Imp{ID: "1"}, impExt: &ImpExt{prebid: prebidWithAdunitCode, prebidDirty: true}}},
+			expectedRequest:   openrtb2.BidRequest{Imp: []openrtb2.Imp{{ID: "1", Ext: prebidWithAdunitCodeJson}}},
 			expectedAccessed:  true,
 		},
 		{
@@ -2336,6 +2345,20 @@ func TestRegExtUnmarshal(t *testing.T) {
 			expectError: false,
 		},
 		{
+			name:        `valid_gpc_json_"1"`,
+			regExt:      &RegExt{},
+			extJson:     json.RawMessage(`{"gpc": "1"}`),
+			expectGPC:   ptrutil.ToPtr("1"),
+			expectError: false,
+		},
+		{
+			name:        `valid_gpc_json_1`,
+			regExt:      &RegExt{},
+			extJson:     json.RawMessage(`{"gpc": 1}`),
+			expectGPC:   ptrutil.ToPtr("1"),
+			expectError: false,
+		},
+		{
 			name:        "malformed_gpc_json",
 			regExt:      &RegExt{},
 			extJson:     json.RawMessage(`{"gpc":nill}`),
@@ -2368,6 +2391,7 @@ func TestRegExtUnmarshal(t *testing.T) {
 			assert.Equal(t, tt.expectDSA, tt.regExt.dsa)
 			assert.Equal(t, tt.expectGDPR, tt.regExt.gdpr)
 			assert.Equal(t, tt.expectUSPrivacy, tt.regExt.usPrivacy)
+			assert.Equal(t, tt.expectGPC, tt.regExt.gpc)
 		})
 	}
 }

@@ -10,15 +10,15 @@ import (
 	gpplib "github.com/prebid/go-gpp"
 	"github.com/prebid/go-gpp/constants"
 	"github.com/prebid/openrtb/v20/openrtb2"
-	"github.com/prebid/prebid-server/v3/config"
-	"github.com/prebid/prebid-server/v3/errortypes"
-	"github.com/prebid/prebid-server/v3/firstpartydata"
-	"github.com/prebid/prebid-server/v3/gdpr"
-	"github.com/prebid/prebid-server/v3/metrics"
-	"github.com/prebid/prebid-server/v3/openrtb_ext"
-	"github.com/prebid/prebid-server/v3/privacy"
-	"github.com/prebid/prebid-server/v3/util/jsonutil"
-	"github.com/prebid/prebid-server/v3/util/ptrutil"
+	"github.com/prebid/prebid-server/v4/config"
+	"github.com/prebid/prebid-server/v4/errortypes"
+	"github.com/prebid/prebid-server/v4/firstpartydata"
+	"github.com/prebid/prebid-server/v4/gdpr"
+	"github.com/prebid/prebid-server/v4/metrics"
+	"github.com/prebid/prebid-server/v4/openrtb_ext"
+	"github.com/prebid/prebid-server/v4/privacy"
+	"github.com/prebid/prebid-server/v4/util/jsonutil"
+	"github.com/prebid/prebid-server/v4/util/ptrutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -72,7 +72,8 @@ func (fpb fakePermissionsBuilder) Builder(gdpr.TCF2ConfigReader, gdpr.RequestInf
 }
 
 func assertReq(t *testing.T, bidderRequests []BidderRequest,
-	applyCOPPA bool, consentedVendors map[string]bool) {
+	applyCOPPA bool, consentedVendors map[string]bool,
+) {
 	// assert individual bidder requests
 	assert.NotEqual(t, bidderRequests, 0, "cleanOpenRTBRequest should split request into individual bidder requests")
 
@@ -607,80 +608,83 @@ func TestCreateSanitizedImpExt(t *testing.T) {
 		{
 			description: "imp.ext",
 			givenImpExt: map[string]json.RawMessage{
-				"anyBidder": json.RawMessage(`"anyBidderValues"`),
-				"data":      json.RawMessage(`"anyData"`),
-				"context":   json.RawMessage(`"anyContext"`),
-				"skadn":     json.RawMessage(`"anySKAdNetwork"`),
-				"gpid":      json.RawMessage(`"anyGPID"`),
-				"tid":       json.RawMessage(`"anyTID"`),
+				"arbitraryField": json.RawMessage(`"arbitraryValue"`),
+				"data":           json.RawMessage(`"anyData"`),
+				"context":        json.RawMessage(`"anyContext"`),
+				"skadn":          json.RawMessage(`"anySKAdNetwork"`),
+				"gpid":           json.RawMessage(`"anyGPID"`),
+				"tid":            json.RawMessage(`"anyTID"`),
 			},
 			givenImpExtPrebid: map[string]json.RawMessage{},
 			expected: map[string]json.RawMessage{
-				"data":    json.RawMessage(`"anyData"`),
-				"context": json.RawMessage(`"anyContext"`),
-				"skadn":   json.RawMessage(`"anySKAdNetwork"`),
-				"gpid":    json.RawMessage(`"anyGPID"`),
-				"tid":     json.RawMessage(`"anyTID"`),
+				"arbitraryField": json.RawMessage(`"arbitraryValue"`),
+				"data":           json.RawMessage(`"anyData"`),
+				"context":        json.RawMessage(`"anyContext"`),
+				"skadn":          json.RawMessage(`"anySKAdNetwork"`),
+				"gpid":           json.RawMessage(`"anyGPID"`),
+				"tid":            json.RawMessage(`"anyTID"`),
 			},
 			expectedError: "",
 		},
 		{
 			description: "imp.ext + imp.ext.prebid - Prebid Bidder Only",
 			givenImpExt: map[string]json.RawMessage{
-				"anyBidder": json.RawMessage(`"anyBidderValues"`),
-				"prebid":    json.RawMessage(`"ignoredInFavorOfSeparatelyUnmarshalledImpExtPrebid"`),
-				"data":      json.RawMessage(`"anyData"`),
-				"context":   json.RawMessage(`"anyContext"`),
-				"skadn":     json.RawMessage(`"anySKAdNetwork"`),
-				"gpid":      json.RawMessage(`"anyGPID"`),
-				"tid":       json.RawMessage(`"anyTID"`),
+				"arbitraryField": json.RawMessage(`"arbitraryValue"`),
+				"prebid":         json.RawMessage(`"ignoredInFavorOfSeparatelyUnmarshalledImpExtPrebid"`),
+				"data":           json.RawMessage(`"anyData"`),
+				"context":        json.RawMessage(`"anyContext"`),
+				"skadn":          json.RawMessage(`"anySKAdNetwork"`),
+				"gpid":           json.RawMessage(`"anyGPID"`),
+				"tid":            json.RawMessage(`"anyTID"`),
 			},
 			givenImpExtPrebid: map[string]json.RawMessage{
 				"bidder": json.RawMessage(`"anyBidder"`),
 			},
 			expected: map[string]json.RawMessage{
-				"data":    json.RawMessage(`"anyData"`),
-				"context": json.RawMessage(`"anyContext"`),
-				"skadn":   json.RawMessage(`"anySKAdNetwork"`),
-				"gpid":    json.RawMessage(`"anyGPID"`),
-				"tid":     json.RawMessage(`"anyTID"`),
+				"arbitraryField": json.RawMessage(`"arbitraryValue"`),
+				"data":           json.RawMessage(`"anyData"`),
+				"context":        json.RawMessage(`"anyContext"`),
+				"skadn":          json.RawMessage(`"anySKAdNetwork"`),
+				"gpid":           json.RawMessage(`"anyGPID"`),
+				"tid":            json.RawMessage(`"anyTID"`),
 			},
 			expectedError: "",
 		},
 		{
 			description: "imp.ext + imp.ext.prebid - Prebid Bidder + Other Forbidden Value",
 			givenImpExt: map[string]json.RawMessage{
-				"anyBidder": json.RawMessage(`"anyBidderValues"`),
-				"prebid":    json.RawMessage(`"ignoredInFavorOfSeparatelyUnmarshalledImpExtPrebid"`),
-				"data":      json.RawMessage(`"anyData"`),
-				"context":   json.RawMessage(`"anyContext"`),
-				"skadn":     json.RawMessage(`"anySKAdNetwork"`),
-				"gpid":      json.RawMessage(`"anyGPID"`),
-				"tid":       json.RawMessage(`"anyTID"`),
+				"arbitraryField": json.RawMessage(`"arbitraryValue"`),
+				"prebid":         json.RawMessage(`"ignoredInFavorOfSeparatelyUnmarshalledImpExtPrebid"`),
+				"data":           json.RawMessage(`"anyData"`),
+				"context":        json.RawMessage(`"anyContext"`),
+				"skadn":          json.RawMessage(`"anySKAdNetwork"`),
+				"gpid":           json.RawMessage(`"anyGPID"`),
+				"tid":            json.RawMessage(`"anyTID"`),
 			},
 			givenImpExtPrebid: map[string]json.RawMessage{
 				"bidder":    json.RawMessage(`"anyBidder"`),
 				"forbidden": json.RawMessage(`"anyValue"`),
 			},
 			expected: map[string]json.RawMessage{
-				"data":    json.RawMessage(`"anyData"`),
-				"context": json.RawMessage(`"anyContext"`),
-				"skadn":   json.RawMessage(`"anySKAdNetwork"`),
-				"gpid":    json.RawMessage(`"anyGPID"`),
-				"tid":     json.RawMessage(`"anyTID"`),
+				"arbitraryField": json.RawMessage(`"arbitraryValue"`),
+				"data":           json.RawMessage(`"anyData"`),
+				"context":        json.RawMessage(`"anyContext"`),
+				"skadn":          json.RawMessage(`"anySKAdNetwork"`),
+				"gpid":           json.RawMessage(`"anyGPID"`),
+				"tid":            json.RawMessage(`"anyTID"`),
 			},
 			expectedError: "",
 		},
 		{
 			description: "imp.ext + imp.ext.prebid - Prebid Bidder + Other Allowed Values",
 			givenImpExt: map[string]json.RawMessage{
-				"anyBidder": json.RawMessage(`"anyBidderValues"`),
-				"prebid":    json.RawMessage(`"ignoredInFavorOfSeparatelyUnmarshalledImpExtPrebid"`),
-				"data":      json.RawMessage(`"anyData"`),
-				"context":   json.RawMessage(`"anyContext"`),
-				"skadn":     json.RawMessage(`"anySKAdNetwork"`),
-				"gpid":      json.RawMessage(`"anyGPID"`),
-				"tid":       json.RawMessage(`"anyTID"`),
+				"arbitraryField": json.RawMessage(`"arbitraryValue"`),
+				"prebid":         json.RawMessage(`"ignoredInFavorOfSeparatelyUnmarshalledImpExtPrebid"`),
+				"data":           json.RawMessage(`"anyData"`),
+				"context":        json.RawMessage(`"anyContext"`),
+				"skadn":          json.RawMessage(`"anySKAdNetwork"`),
+				"gpid":           json.RawMessage(`"anyGPID"`),
+				"tid":            json.RawMessage(`"anyTID"`),
 			},
 			givenImpExtPrebid: map[string]json.RawMessage{
 				"bidder":                json.RawMessage(`"anyBidder"`),
@@ -688,12 +692,13 @@ func TestCreateSanitizedImpExt(t *testing.T) {
 				"options":               json.RawMessage(`"anyOptions"`),
 			},
 			expected: map[string]json.RawMessage{
-				"prebid":  json.RawMessage(`{"is_rewarded_inventory":"anyIsRewardedInventory","options":"anyOptions"}`),
-				"data":    json.RawMessage(`"anyData"`),
-				"context": json.RawMessage(`"anyContext"`),
-				"skadn":   json.RawMessage(`"anySKAdNetwork"`),
-				"gpid":    json.RawMessage(`"anyGPID"`),
-				"tid":     json.RawMessage(`"anyTID"`),
+				"arbitraryField": json.RawMessage(`"arbitraryValue"`),
+				"prebid":         json.RawMessage(`{"is_rewarded_inventory":"anyIsRewardedInventory","options":"anyOptions"}`),
+				"data":           json.RawMessage(`"anyData"`),
+				"context":        json.RawMessage(`"anyContext"`),
+				"skadn":          json.RawMessage(`"anySKAdNetwork"`),
+				"gpid":           json.RawMessage(`"anyGPID"`),
+				"tid":            json.RawMessage(`"anyTID"`),
 			},
 			expectedError: "",
 		},
@@ -731,7 +736,7 @@ func TestCleanOpenRTBRequests(t *testing.T) {
 			consentedVendors: map[string]bool{"appnexus": true},
 		},
 		{
-			req:              AuctionRequest{BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: newAdapterAliasBidRequest(t)}, UserSyncs: &emptyUsersync{}, TCF2Config: emptyTCF2Config},
+			req:              AuctionRequest{BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: newAdapterAliasBidRequest()}, UserSyncs: &emptyUsersync{}, TCF2Config: emptyTCF2Config},
 			bidReqAssertions: assertReq,
 			hasError:         false,
 			applyCOPPA:       false,
@@ -764,7 +769,7 @@ func TestCleanOpenRTBRequests(t *testing.T) {
 			hostSChainNode:    nil,
 			bidderInfo:        config.BidderInfos{},
 		}
-		bidderRequests, _, err := reqSplitter.cleanOpenRTBRequests(context.Background(), test.req, nil, gdpr.SignalNo, false, map[string]float64{})
+		bidderRequests, _, err := reqSplitter.cleanOpenRTBRequests(context.Background(), test.req, nil, map[string]float64{})
 		if test.hasError {
 			assert.NotNil(t, err, "Error shouldn't be nil")
 		} else {
@@ -798,17 +803,17 @@ func TestCleanOpenRTBRequestsWithFPD(t *testing.T) {
 		},
 		{
 			description: "Pass valid FPD data for bidders specified in request",
-			req:         AuctionRequest{BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: newAdapterAliasBidRequest(t)}, UserSyncs: &emptyUsersync{}, FirstPartyData: fpd, TCF2Config: emptyTCF2Config},
+			req:         AuctionRequest{BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: newAdapterAliasBidRequest()}, UserSyncs: &emptyUsersync{}, FirstPartyData: fpd, TCF2Config: emptyTCF2Config},
 			fpdExpected: true,
 		},
 		{
 			description: "Bidders specified in request but there is no fpd data for this bidder",
-			req:         AuctionRequest{BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: newAdapterAliasBidRequest(t)}, UserSyncs: &emptyUsersync{}, FirstPartyData: make(map[openrtb_ext.BidderName]*firstpartydata.ResolvedFirstPartyData), TCF2Config: emptyTCF2Config},
+			req:         AuctionRequest{BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: newAdapterAliasBidRequest()}, UserSyncs: &emptyUsersync{}, FirstPartyData: make(map[openrtb_ext.BidderName]*firstpartydata.ResolvedFirstPartyData), TCF2Config: emptyTCF2Config},
 			fpdExpected: false,
 		},
 		{
 			description: "No FPD data passed",
-			req:         AuctionRequest{BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: newAdapterAliasBidRequest(t)}, UserSyncs: &emptyUsersync{}, FirstPartyData: nil, TCF2Config: emptyTCF2Config},
+			req:         AuctionRequest{BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: newAdapterAliasBidRequest()}, UserSyncs: &emptyUsersync{}, FirstPartyData: nil, TCF2Config: emptyTCF2Config},
 			fpdExpected: false,
 		},
 	}
@@ -830,7 +835,7 @@ func TestCleanOpenRTBRequestsWithFPD(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		bidderRequests, _, err := reqSplitter.cleanOpenRTBRequests(context.Background(), test.req, nil, gdpr.SignalNo, false, map[string]float64{})
+		bidderRequests, _, err := reqSplitter.cleanOpenRTBRequests(context.Background(), test.req, nil, map[string]float64{})
 		assert.Empty(t, err, "No errors should be returned")
 		for _, bidderRequest := range bidderRequests {
 			bidderName := bidderRequest.BidderName
@@ -918,7 +923,8 @@ func TestCleanOpenRTBRequestsWithBidResponses(t *testing.T) {
 					BidRequest: &openrtb2.BidRequest{Imp: nil},
 					BidderName: "bidderA",
 					BidderStoredResponses: map[string]json.RawMessage{
-						"imp-id1": bidRespId1},
+						"imp-id1": bidRespId1,
+					},
 				},
 			},
 		},
@@ -948,7 +954,8 @@ func TestCleanOpenRTBRequestsWithBidResponses(t *testing.T) {
 					}},
 					BidderName: "bidderA",
 					BidderStoredResponses: map[string]json.RawMessage{
-						"imp-id1": bidRespId1},
+						"imp-id1": bidRespId1,
+					},
 				},
 			},
 		},
@@ -979,7 +986,8 @@ func TestCleanOpenRTBRequestsWithBidResponses(t *testing.T) {
 					BidRequest: &openrtb2.BidRequest{Imp: nil},
 					BidderName: "bidderB",
 					BidderStoredResponses: map[string]json.RawMessage{
-						"imp-id1": bidRespId2},
+						"imp-id1": bidRespId2,
+					},
 				},
 			},
 		},
@@ -1009,13 +1017,15 @@ func TestCleanOpenRTBRequestsWithBidResponses(t *testing.T) {
 					}},
 					BidderName: "bidderA",
 					BidderStoredResponses: map[string]json.RawMessage{
-						"imp-id1": bidRespId1},
+						"imp-id1": bidRespId1,
+					},
 				},
 				"bidderB": {
 					BidRequest: &openrtb2.BidRequest{Imp: nil},
 					BidderName: "bidderB",
 					BidderStoredResponses: map[string]json.RawMessage{
-						"imp-id1": bidRespId2},
+						"imp-id1": bidRespId2,
+					},
 				},
 			},
 		},
@@ -1049,13 +1059,15 @@ func TestCleanOpenRTBRequestsWithBidResponses(t *testing.T) {
 					}},
 					BidderName: "bidderA",
 					BidderStoredResponses: map[string]json.RawMessage{
-						"imp-id1": bidRespId1},
+						"imp-id1": bidRespId1,
+					},
 				},
 				"bidderB": {
 					BidRequest: &openrtb2.BidRequest{Imp: nil},
 					BidderName: "bidderB",
 					BidderStoredResponses: map[string]json.RawMessage{
-						"imp-id1": bidRespId2},
+						"imp-id1": bidRespId2,
+					},
 				},
 				"bidderC": {
 					BidRequest: &openrtb2.BidRequest{Imp: []openrtb2.Imp{
@@ -1088,7 +1100,8 @@ func TestCleanOpenRTBRequestsWithBidResponses(t *testing.T) {
 					}},
 					BidderName: "bidderA",
 					BidderStoredResponses: map[string]json.RawMessage{
-						"imp-id2": bidRespId2},
+						"imp-id2": bidRespId2,
+					},
 				},
 			},
 		},
@@ -1145,7 +1158,7 @@ func TestCleanOpenRTBRequestsWithBidResponses(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		actualBidderRequests, _, err := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, gdpr.SignalNo, false, map[string]float64{})
+		actualBidderRequests, _, err := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, map[string]float64{})
 		assert.Empty(t, err, "No errors should be returned")
 		assert.Len(t, actualBidderRequests, len(test.expectedBidderRequests), "result len doesn't match for testCase %s", test.description)
 		for _, actualBidderRequest := range actualBidderRequests {
@@ -1273,7 +1286,7 @@ func TestCleanOpenRTBRequestsCCPA(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		req := newBidRequest(t)
+		req := newBidRequest()
 		req.Ext = test.reqExt
 		req.Regs = &openrtb2.Regs{
 			USPrivacy: test.ccpaConsent,
@@ -1317,7 +1330,7 @@ func TestCleanOpenRTBRequestsCCPA(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		bidderRequests, privacyLabels, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, gdpr.SignalNo, false, map[string]float64{})
+		bidderRequests, privacyLabels, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, map[string]float64{})
 		result := bidderRequests[0]
 
 		assert.Nil(t, errs)
@@ -1359,7 +1372,7 @@ func TestCleanOpenRTBRequestsCCPAErrors(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		req := newBidRequest(t)
+		req := newBidRequest()
 		req.Ext = test.reqExt
 		req.Regs = &openrtb2.Regs{USPrivacy: test.reqRegsPrivacy}
 
@@ -1396,7 +1409,7 @@ func TestCleanOpenRTBRequestsCCPAErrors(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		_, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, &reqExtStruct, gdpr.SignalNo, false, map[string]float64{})
+		_, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, &reqExtStruct, map[string]float64{})
 
 		assert.ElementsMatch(t, []error{test.expectError}, errs, test.description)
 	}
@@ -1428,7 +1441,7 @@ func TestCleanOpenRTBRequestsCOPPA(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		req := newBidRequest(t)
+		req := newBidRequest()
 		req.Regs = &openrtb2.Regs{COPPA: test.coppa}
 
 		auctionReq := AuctionRequest{
@@ -1455,7 +1468,7 @@ func TestCleanOpenRTBRequestsCOPPA(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		bidderRequests, privacyLabels, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, gdpr.SignalNo, false, map[string]float64{})
+		bidderRequests, privacyLabels, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, map[string]float64{})
 		result := bidderRequests[0]
 
 		assert.Nil(t, errs)
@@ -1582,7 +1595,7 @@ func TestCleanOpenRTBRequestsSChain(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		req := newBidRequest(t)
+		req := newBidRequest()
 		if test.inSChain != nil {
 			req.Source.SChain = test.inSChain
 		}
@@ -1616,7 +1629,7 @@ func TestCleanOpenRTBRequestsSChain(t *testing.T) {
 			bidderInfo:        config.BidderInfos{"appnexus": config.BidderInfo{OpenRTB: &config.OpenRTBInfo{Version: test.ortbVersion}}},
 		}
 
-		bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, extRequest, gdpr.SignalNo, false, map[string]float64{})
+		bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, extRequest, map[string]float64{})
 		if test.hasError == true {
 			assert.NotNil(t, errs)
 			assert.Len(t, bidderRequests, 0)
@@ -1657,7 +1670,7 @@ func TestCleanOpenRTBRequestsBidderParams(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		req := newBidRequestWithBidderParams(t)
+		req := newBidRequestWithBidderParams()
 		var extRequest *openrtb_ext.ExtRequest
 		if test.inExt != nil {
 			req.Ext = test.inExt
@@ -1687,7 +1700,7 @@ func TestCleanOpenRTBRequestsBidderParams(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, extRequest, gdpr.SignalNo, false, map[string]float64{})
+		bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, extRequest, map[string]float64{})
 		if test.hasError == true {
 			assert.NotNil(t, errs)
 			assert.Len(t, bidderRequests, 0)
@@ -1964,86 +1977,108 @@ func TestGetExtCacheInstructions(t *testing.T) {
 }
 
 func TestGetExtTargetData(t *testing.T) {
-	type inTest struct {
-		requestExtPrebid  *openrtb_ext.ExtRequestPrebid
-		cacheInstructions extCacheInstructions
-	}
-	type outTest struct {
-		targetData    *targetData
-		nilTargetData bool
-	}
 	testCases := []struct {
-		desc string
-		in   inTest
-		out  outTest
+		name                   string
+		givenRequestExtPrebid  *openrtb_ext.ExtRequestPrebid
+		givenCacheInstructions extCacheInstructions
+		givenAccount           config.Account
+		givenWarning           []*errortypes.Warning
+		expectTargetData       *targetData
 	}{
 		{
-			"nil requestExt, nil outTargetData",
-			inTest{
-				requestExtPrebid: nil,
-				cacheInstructions: extCacheInstructions{
-					cacheBids: true,
-					cacheVAST: true,
-				},
-			},
-			outTest{targetData: nil, nilTargetData: true},
+			name:                   "nil",
+			givenRequestExtPrebid:  nil,
+			givenCacheInstructions: extCacheInstructions{cacheBids: true, cacheVAST: true},
+			givenAccount:           config.Account{},
+			givenWarning:           nil,
+			expectTargetData:       nil,
 		},
 		{
-			"Valid requestExt, nil Targeting field, nil outTargetData",
-			inTest{
-				requestExtPrebid: &openrtb_ext.ExtRequestPrebid{
-					Targeting: nil,
-				},
-				cacheInstructions: extCacheInstructions{
-					cacheBids: true,
-					cacheVAST: true,
-				},
-			},
-			outTest{targetData: nil, nilTargetData: true},
+			name:                   "nil-targeting",
+			givenRequestExtPrebid:  &openrtb_ext.ExtRequestPrebid{Targeting: nil},
+			givenCacheInstructions: extCacheInstructions{cacheBids: true, cacheVAST: true},
+			givenAccount:           config.Account{},
+			givenWarning:           nil,
+			expectTargetData:       nil,
 		},
 		{
-			"Valid targeting data in requestExt, valid outTargetData",
-			inTest{
-				requestExtPrebid: &openrtb_ext.ExtRequestPrebid{
-					Targeting: &openrtb_ext.ExtRequestTargeting{
-						PriceGranularity: &openrtb_ext.PriceGranularity{
-							Precision: ptrutil.ToPtr(2),
-							Ranges:    []openrtb_ext.GranularityRange{{Min: 0.00, Max: 5.00, Increment: 1.00}},
-						},
-						IncludeWinners:    ptrutil.ToPtr(true),
-						IncludeBidderKeys: ptrutil.ToPtr(true),
-					},
-				},
-				cacheInstructions: extCacheInstructions{
-					cacheBids: true,
-					cacheVAST: true,
-				},
-			},
-			outTest{
-				targetData: &targetData{
-					priceGranularity: openrtb_ext.PriceGranularity{
+			name: "populated-full",
+			givenRequestExtPrebid: &openrtb_ext.ExtRequestPrebid{
+				Targeting: &openrtb_ext.ExtRequestTargeting{
+					AlwaysIncludeDeals:        true,
+					IncludeBidderKeys:         ptrutil.ToPtr(true),
+					IncludeFormat:             true,
+					IncludeWinners:            ptrutil.ToPtr(true),
+					MediaTypePriceGranularity: &openrtb_ext.MediaTypePriceGranularity{},
+					PreferDeals:               true,
+					PriceGranularity: &openrtb_ext.PriceGranularity{
 						Precision: ptrutil.ToPtr(2),
 						Ranges:    []openrtb_ext.GranularityRange{{Min: 0.00, Max: 5.00, Increment: 1.00}},
 					},
-					includeWinners:    true,
-					includeBidderKeys: true,
-					includeCacheBids:  true,
-					includeCacheVast:  true,
 				},
-				nilTargetData: false,
+			},
+			givenCacheInstructions: extCacheInstructions{
+				cacheBids: true,
+				cacheVAST: true,
+			},
+			givenAccount: config.Account{},
+			givenWarning: nil,
+			expectTargetData: &targetData{
+				alwaysIncludeDeals:        true,
+				includeBidderKeys:         true,
+				includeCacheBids:          true,
+				includeCacheVast:          true,
+				includeFormat:             true,
+				includeWinners:            true,
+				mediaTypePriceGranularity: openrtb_ext.MediaTypePriceGranularity{},
+				preferDeals:               true,
+				priceGranularity: openrtb_ext.PriceGranularity{
+					Precision: ptrutil.ToPtr(2),
+					Ranges:    []openrtb_ext.GranularityRange{{Min: 0.00, Max: 5.00, Increment: 1.00}},
+				},
+				prefix: DefaultKeyPrefix,
+			},
+		},
+		{
+			name: "populated-pointers-nil",
+			givenRequestExtPrebid: &openrtb_ext.ExtRequestPrebid{
+				Targeting: &openrtb_ext.ExtRequestTargeting{
+					AlwaysIncludeDeals:        true,
+					IncludeBidderKeys:         nil,
+					IncludeFormat:             true,
+					IncludeWinners:            nil,
+					MediaTypePriceGranularity: nil,
+					PreferDeals:               true,
+					PriceGranularity:          nil,
+				},
+			},
+			givenCacheInstructions: extCacheInstructions{
+				cacheBids: true,
+				cacheVAST: true,
+			},
+			givenAccount: config.Account{},
+			givenWarning: nil,
+			expectTargetData: &targetData{
+				alwaysIncludeDeals:        true,
+				includeBidderKeys:         false,
+				includeCacheBids:          true,
+				includeCacheVast:          true,
+				includeFormat:             true,
+				includeWinners:            false,
+				mediaTypePriceGranularity: openrtb_ext.MediaTypePriceGranularity{},
+				preferDeals:               true,
+				priceGranularity:          openrtb_ext.PriceGranularity{},
+				prefix:                    DefaultKeyPrefix,
 			},
 		},
 	}
 
 	for _, test := range testCases {
-		actualTargetData := getExtTargetData(test.in.requestExtPrebid, test.in.cacheInstructions)
-
-		if test.out.nilTargetData {
-			assert.Nil(t, actualTargetData, "%s. Targeting data should be nil. \n", test.desc)
-		} else {
-			assert.NotNil(t, actualTargetData, "%s. Targeting data should NOT be nil. \n", test.desc)
-			assert.Equal(t, *test.out.targetData, *actualTargetData, "%s. Unexpected targeting data value. \n", test.desc)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			result, warnings := getExtTargetData(test.givenRequestExtPrebid, test.givenCacheInstructions, test.givenAccount)
+			assert.Equal(t, test.givenWarning, warnings)
+			assert.Equal(t, test.expectTargetData, result)
+		})
 	}
 }
 
@@ -2093,7 +2128,6 @@ func TestParseRequestDebugValues(t *testing.T) {
 }
 
 func TestSetDebugLogValues(t *testing.T) {
-
 	type aTest struct {
 		desc               string
 		inAccountDebugFlag bool
@@ -2105,7 +2139,6 @@ func TestSetDebugLogValues(t *testing.T) {
 		desc      string
 		testCases []aTest
 	}{
-
 		{
 			"nil debug log",
 			[]aTest{
@@ -2249,7 +2282,7 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		req := newBidRequest(t)
+		req := newBidRequest()
 		req.Device.Lmt = test.lmt
 
 		auctionReq := AuctionRequest{
@@ -2279,7 +2312,7 @@ func TestCleanOpenRTBRequestsLMT(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		results, privacyLabels, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, gdpr.SignalNo, false, map[string]float64{})
+		results, privacyLabels, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, map[string]float64{})
 		result := results[0]
 
 		assert.Nil(t, errs)
@@ -2355,7 +2388,7 @@ func TestCleanOpenRTBRequestsGDPR(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		req := newBidRequest(t)
+		req := newBidRequest()
 		req.User.Consent = test.gdprConsent
 
 		privacyConfig := config.Privacy{}
@@ -2369,6 +2402,8 @@ func TestCleanOpenRTBRequestsGDPR(t *testing.T) {
 				privacyConfig.GDPR.TCF2,
 				accountConfig.GDPR,
 			),
+			GDPRSignal:   test.gdprSignal,
+			GDPREnforced: test.gdprEnforced,
 		}
 
 		gdprPermissionsBuilder := fakePermissionsBuilder{
@@ -2392,7 +2427,7 @@ func TestCleanOpenRTBRequestsGDPR(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		results, privacyLabels, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, test.gdprSignal, test.gdprEnforced, map[string]float64{})
+		results, privacyLabels, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, map[string]float64{})
 		result := results[0]
 
 		if test.expectError {
@@ -2421,6 +2456,7 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 		gdprAllowedBidders     []openrtb_ext.BidderName
 		expectedBidders        []openrtb_ext.BidderName
 		expectedBlockedBidders []openrtb_ext.BidderName
+		expectedErrors         []error
 	}{
 		{
 			description:            "gdpr enforced, one request allowed and one request blocked",
@@ -2428,6 +2464,10 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 			gdprAllowedBidders:     []openrtb_ext.BidderName{openrtb_ext.BidderAppnexus},
 			expectedBidders:        []openrtb_ext.BidderName{openrtb_ext.BidderAppnexus},
 			expectedBlockedBidders: []openrtb_ext.BidderName{openrtb_ext.BidderRubicon},
+			expectedErrors: []error{&errortypes.Warning{
+				Message:     `bidder "rubicon" blocked by privacy settings`,
+				WarningCode: errortypes.BidderBlockedByPrivacySettings,
+			}},
 		},
 		{
 			description:            "gdpr enforced, two requests allowed and no requests blocked",
@@ -2446,7 +2486,7 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		req := newBidRequest(t)
+		req := newBidRequest()
 		req.Regs = &openrtb2.Regs{
 			Ext: json.RawMessage(`{"gdpr":1}`),
 		}
@@ -2464,6 +2504,7 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 			UserSyncs:         &emptyUsersync{},
 			Account:           accountConfig,
 			TCF2Config:        gdpr.NewTCF2Config(privacyConfig.GDPR.TCF2, accountConfig.GDPR),
+			GDPREnforced:      test.gdprEnforced,
 		}
 
 		gdprPermissionsBuilder := fakePermissionsBuilder{
@@ -2487,7 +2528,7 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		results, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, gdpr.SignalYes, test.gdprEnforced, map[string]float64{})
+		results, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, map[string]float64{})
 
 		// extract bidder name from each request in the results
 		bidders := []openrtb_ext.BidderName{}
@@ -2495,7 +2536,7 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 			bidders = append(bidders, req.BidderName)
 		}
 
-		assert.Empty(t, errs, test.description)
+		assert.Equal(t, test.expectedErrors, errs, test.description)
 		assert.ElementsMatch(t, bidders, test.expectedBidders, test.description)
 
 		for _, blockedBidder := range test.expectedBlockedBidders {
@@ -2510,7 +2551,7 @@ func TestCleanOpenRTBRequestsGDPRBlockBidRequest(t *testing.T) {
 func TestCleanOpenRTBRequestsWithOpenRTBDowngrade(t *testing.T) {
 	emptyTCF2Config := gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{})
 
-	bidReq := newBidRequest(t)
+	bidReq := newBidRequest()
 	bidReq.Regs = &openrtb2.Regs{}
 	bidReq.Regs.GPP = "DBACNYA~CPXxRfAPXxRfAAfKABENB-CgAAAAAAAAAAYgAAAAAAAA~1NYN"
 	bidReq.Regs.GPPSID = []int8{6}
@@ -2560,7 +2601,6 @@ func TestCleanOpenRTBRequestsWithOpenRTBDowngrade(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-
 			gdprPermsBuilder := fakePermissionsBuilder{
 				permissions: &permissionsMock{
 					allowAllBidders: true,
@@ -2575,12 +2615,11 @@ func TestCleanOpenRTBRequestsWithOpenRTBDowngrade(t *testing.T) {
 				hostSChainNode:    nil,
 				bidderInfo:        test.bidderInfos,
 			}
-			bidderRequests, _, err := reqSplitter.cleanOpenRTBRequests(context.Background(), test.req, nil, gdpr.SignalNo, false, map[string]float64{})
+			bidderRequests, _, err := reqSplitter.cleanOpenRTBRequests(context.Background(), test.req, nil, map[string]float64{})
 			assert.Nil(t, err, "Err should be nil")
 			bidRequest := bidderRequests[0]
 			assert.Equal(t, test.expectRegs, bidRequest.BidRequest.Regs)
 			assert.Equal(t, test.expectUser, bidRequest.BidRequest.User)
-
 		})
 	}
 }
@@ -2713,6 +2752,16 @@ func TestBuildRequestExtForBidder(t *testing.T) {
 			requestExt:   json.RawMessage(`{"other":"foo","prebid":{"integration":"a","channel":{"name":"b","version":"c"},"debug":true,"currency":{"rates":{"FOO":{"BAR":42}},"usepbsrates":true},"alternatebiddercodes":{"enabled":true,"bidders":{"foo":{"enabled":true,"allowedbiddercodes":["foo2"]}}},"multibid":[{"bidder":"foo3","maxbids":3,"targetbiddercodeprefix":"fmb"},{"bidders":["pubmatic","groupm"],"maxbids":4}]}}`),
 			expectedJson: json.RawMessage(`{"other":"foo","prebid":{"integration":"a","channel":{"name":"b","version":"c"},"debug":true,"currency":{"rates":{"FOO":{"BAR":42}},"usepbsrates":true},"alternatebiddercodes":{"enabled":true,"bidders":{"foo":{"enabled":true,"allowedbiddercodes":["foo2"]}}}}}`),
 		},
+		{
+			name:         "targeting",
+			requestExt:   json.RawMessage(`{"prebid":{"targeting":{"pricegranularity":{"precision":2,"ranges":[{"min":0,"max":20,"increment":0.1}]},"mediatypepricegranularity":{},"includebidderkeys":true,"includewinners":true,"includebrandcategory":{"primaryadserver":1,"publisher":"anyPublisher","withcategory":true}}}}`),
+			expectedJson: json.RawMessage(`{"prebid":{"targeting":{"includebrandcategory":{"primaryadserver":1,"publisher":"anyPublisher","withcategory":true}}}}`),
+		},
+		{
+			name:         "request_ext_with_aliase",
+			requestExt:   json.RawMessage(`{"prebid":{"aliases":{"foo":"pubmatic", "bar":"pubmatic"}}}`),
+			expectedJson: json.RawMessage(`{"prebid":{"aliases":{"foo":"pubmatic"}}}`),
+		},
 	}
 
 	for _, test := range testCases {
@@ -2772,8 +2821,46 @@ func TestBuildRequestExtForBidder_RequestExtMalformed(t *testing.T) {
 	assert.EqualError(t, err, "expect { or n, but found m")
 }
 
+func TestBuildRequestExtTargeting(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		result := buildRequestExtTargeting(nil)
+		assert.Nil(t, result)
+	})
+
+	t.Run("brandcategory-nil", func(t *testing.T) {
+		given := &openrtb_ext.ExtRequestTargeting{}
+
+		result := buildRequestExtTargeting(given)
+		assert.Nil(t, result)
+	})
+
+	t.Run("brandcategory-populated", func(t *testing.T) {
+		brandCatgory := &openrtb_ext.ExtIncludeBrandCategory{
+			PrimaryAdServer:     1,
+			Publisher:           "anyPublisher",
+			WithCategory:        true,
+			TranslateCategories: ptrutil.ToPtr(true),
+		}
+
+		given := &openrtb_ext.ExtRequestTargeting{
+			PriceGranularity:     &openrtb_ext.PriceGranularity{},
+			IncludeBrandCategory: brandCatgory,
+			IncludeWinners:       ptrutil.ToPtr(true),
+		}
+
+		expected := &openrtb_ext.ExtRequestTargeting{
+			PriceGranularity:     nil,
+			IncludeBrandCategory: brandCatgory,
+			IncludeWinners:       nil,
+		}
+
+		result := buildRequestExtTargeting(given)
+		assert.Equal(t, expected, result)
+	})
+}
+
 // newAdapterAliasBidRequest builds a BidRequest with aliases
-func newAdapterAliasBidRequest(t *testing.T) *openrtb2.BidRequest {
+func newAdapterAliasBidRequest() *openrtb2.BidRequest {
 	dnt := int8(1)
 	return &openrtb2.BidRequest{
 		Site: &openrtb2.Site{
@@ -2819,7 +2906,7 @@ func newAdapterAliasBidRequest(t *testing.T) *openrtb2.BidRequest {
 	}
 }
 
-func newBidRequest(t *testing.T) *openrtb2.BidRequest {
+func newBidRequest() *openrtb2.BidRequest {
 	return &openrtb2.BidRequest{
 		Site: &openrtb2.Site{
 			Page:   "www.some.domain.com",
@@ -2873,7 +2960,7 @@ func newBidRequest(t *testing.T) *openrtb2.BidRequest {
 	}
 }
 
-func newBidRequestWithBidderParams(t *testing.T) *openrtb2.BidRequest {
+func newBidRequestWithBidderParams() *openrtb2.BidRequest {
 	return &openrtb2.BidRequest{
 		Site: &openrtb2.Site{
 			Page:   "www.some.domain.com",
@@ -2960,7 +3047,6 @@ func TestRemoveUnpermissionedEids(t *testing.T) {
 		eidPermissions   []openrtb_ext.ExtRequestPrebidDataEidPermission
 		expectedUserEids []openrtb2.EID
 	}{
-
 		{
 			description: "Eids Empty",
 			userEids:    []openrtb2.EID{},
@@ -3267,7 +3353,7 @@ func TestCleanOpenRTBRequestsSChainMultipleBidders(t *testing.T) {
 		hostSChainNode:    nil,
 		bidderInfo:        config.BidderInfos{"appnexus": ortb26enabled, "axonix": ortb26enabled},
 	}
-	bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, extRequest, gdpr.SignalNo, false, map[string]float64{})
+	bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, extRequest, map[string]float64{})
 
 	assert.Nil(t, errs)
 	assert.Len(t, bidderRequests, 2, "Bid request count is not 2")
@@ -3386,7 +3472,7 @@ func TestCleanOpenRTBRequestsBidAdjustment(t *testing.T) {
 		},
 	}
 	for _, test := range testCases {
-		req := newBidRequest(t)
+		req := newBidRequest()
 		accountConfig := config.Account{
 			GDPR: config.AccountGDPR{
 				Enabled: &falseValue,
@@ -3416,10 +3502,169 @@ func TestCleanOpenRTBRequestsBidAdjustment(t *testing.T) {
 			hostSChainNode:    nil,
 			bidderInfo:        config.BidderInfos{},
 		}
-		results, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, gdpr.SignalNo, false, test.bidAdjustmentFactor)
+		results, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, test.bidAdjustmentFactor)
 		result := results[0]
 		assert.Nil(t, errs)
 		assert.Equal(t, test.expectedImp, result.BidRequest.Imp, test.description)
+	}
+}
+
+func TestCleanOpenRTBRequestsBuyerUID(t *testing.T) {
+	tcf2Consent := "COzTVhaOzTVhaGvAAAENAiCIAP_AAH_AAAAAAEEUACCKAAA"
+
+	buyerUIDAppnexus := `{"appnexus": "a"}`
+	buyerUIDAppnexusMixedCase := `{"aPpNeXuS": "a"}`
+	buyerUIDBoth := `{"appnexus": "a", "pubmatic": "b"}`
+
+	bidderParamsAppnexus := `{"appnexus": {"placementId": 1}}`
+	bidderParamsBoth := `{"appnexus": {"placementId": 1}, "pubmatic": {"publisherId": "abc"}}`
+
+	tests := []struct {
+		name          string
+		bidderParams  string
+		user          openrtb2.User
+		expectedUsers map[string]openrtb2.User
+	}{
+		{
+			name:         "one-bidder-with-prebid-buyeruid",
+			bidderParams: bidderParamsAppnexus,
+			user: openrtb2.User{
+				ID:      "some-id",
+				Ext:     json.RawMessage(`{"data": 1, "test": 2, "prebid": {"buyeruids": ` + buyerUIDAppnexus + `}}`),
+				Consent: tcf2Consent,
+			},
+			expectedUsers: map[string]openrtb2.User{
+				"appnexus": {
+					ID:       "some-id",
+					BuyerUID: "a",
+					Ext:      json.RawMessage(`{"consent":"` + tcf2Consent + `","data":1,"test":2}`),
+				},
+			},
+		},
+		{
+			name:         "one-bidder-with-prebid-buyeruid-mixed-case",
+			bidderParams: bidderParamsAppnexus,
+			user: openrtb2.User{
+				ID:      "some-id",
+				Ext:     json.RawMessage(`{"data": 1, "test": 2, "prebid": {"buyeruids": ` + buyerUIDAppnexusMixedCase + `}}`),
+				Consent: tcf2Consent,
+			},
+			expectedUsers: map[string]openrtb2.User{
+				"appnexus": {
+					ID:       "some-id",
+					BuyerUID: "a",
+					Ext:      json.RawMessage(`{"consent":"` + tcf2Consent + `","data":1,"test":2}`),
+				},
+			},
+		},
+		{
+			name:         "one-bidder-with-buyeruid-already-set",
+			bidderParams: bidderParamsAppnexus,
+			user: openrtb2.User{
+				ID:       "some-id",
+				BuyerUID: "already-set-buyeruid",
+				Ext:      json.RawMessage(`{"data": 1, "test": 2, "prebid": {"buyeruids": ` + buyerUIDAppnexus + `}}`),
+				Consent:  tcf2Consent,
+			},
+			expectedUsers: map[string]openrtb2.User{
+				"appnexus": {
+					ID:       "some-id",
+					BuyerUID: "already-set-buyeruid",
+					Ext:      json.RawMessage(`{"consent":"` + tcf2Consent + `","data":1,"test":2}`),
+				},
+			},
+		},
+		{
+			name:         "two-bidder-with-prebid-buyeruids",
+			bidderParams: bidderParamsBoth,
+			user: openrtb2.User{
+				ID:      "some-id",
+				Ext:     json.RawMessage(`{"data": 1, "test": 2, "prebid": {"buyeruids": ` + buyerUIDBoth + `}}`),
+				Consent: tcf2Consent,
+			},
+			expectedUsers: map[string]openrtb2.User{
+				"appnexus": {
+					ID:       "some-id",
+					BuyerUID: "a",
+					Ext:      json.RawMessage(`{"consent":"` + tcf2Consent + `","data":1,"test":2}`),
+				},
+				"pubmatic": {
+					ID:       "some-id",
+					BuyerUID: "b",
+					Ext:      json.RawMessage(`{"consent":"` + tcf2Consent + `","data":1,"test":2}`),
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := &openrtb2.BidRequest{
+				Site: &openrtb2.Site{
+					Publisher: &openrtb2.Publisher{
+						ID: "some-publisher-id",
+					},
+				},
+				Imp: []openrtb2.Imp{{
+					ID: "some-imp-id",
+					Banner: &openrtb2.Banner{
+						Format: []openrtb2.Format{{
+							W: 300,
+							H: 250,
+						}},
+					},
+					Ext: json.RawMessage(`{"prebid":{"tid":"123", "bidder":` + string(test.bidderParams) + `}}`),
+				}},
+				User: &test.user,
+			}
+
+			auctionReq := AuctionRequest{
+				BidRequestWrapper: &openrtb_ext.RequestWrapper{BidRequest: req},
+				UserSyncs:         &emptyUsersync{},
+				Account: config.Account{
+					GDPR: config.AccountGDPR{
+						Enabled: ptrutil.ToPtr(false),
+					},
+				},
+				TCF2Config: gdpr.NewTCF2Config(config.TCF2{}, config.AccountGDPR{}),
+			}
+			gdprPermissionsBuilder := fakePermissionsBuilder{
+				permissions: &permissionsMock{
+					allowAllBidders: true,
+					passGeo:         false,
+					passID:          false,
+					activitiesError: nil,
+				},
+			}.Builder
+
+			reqSplitter := &requestSplitter{
+				bidderToSyncerKey: map[string]string{},
+				me:                &metrics.MetricsEngineMock{},
+				gdprPermsBuilder:  gdprPermissionsBuilder,
+				hostSChainNode:    nil,
+				bidderInfo: config.BidderInfos{
+					"appnexus": config.BidderInfo{
+						OpenRTB: &config.OpenRTBInfo{
+							Version: "2.5",
+						},
+					},
+					"pubmatic": config.BidderInfo{
+						OpenRTB: &config.OpenRTBInfo{
+							Version: "2.5",
+						},
+					},
+				},
+			}
+
+			results, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, nil)
+
+			assert.Empty(t, errs)
+			for _, v := range results {
+				require.NotNil(t, v.BidRequest, "bidrequest")
+				require.NotNil(t, v.BidRequest.User, "bidrequest.user")
+				assert.Equal(t, test.expectedUsers[string(v.BidderName)], *v.BidRequest.User)
+			}
+		})
 	}
 }
 
@@ -3577,6 +3822,28 @@ func TestApplyFPD(t *testing.T) {
 			inputRequest:              openrtb2.BidRequest{User: &openrtb2.User{ID: "UserId", EIDs: []openrtb2.EID{{Source: "source3"}, {Source: "source4"}}}},
 			expectedRequest:           openrtb2.BidRequest{Site: &openrtb2.Site{ID: "SiteId"}, App: &openrtb2.App{ID: "AppId"}, User: &openrtb2.User{ID: "UserId", EIDs: []openrtb2.EID{{Source: "source3"}, {Source: "source4"}}}},
 			fpdUserEIDsExisted:        false,
+		},
+		{
+			description: "req.Device defined; bidderFPD.Device defined; expect request.Device to be overriden by bidderFPD.Device",
+			inputFpd: map[openrtb_ext.BidderName]*firstpartydata.ResolvedFirstPartyData{
+				"bidderNormalized": {Device: &openrtb2.Device{Make: "DeviceMake"}},
+			},
+			inputBidderName:           "bidderFromRequest",
+			inputBidderCoreName:       "bidderNormalized",
+			inputBidderIsRequestAlias: false,
+			inputRequest:              openrtb2.BidRequest{Device: &openrtb2.Device{Make: "TestDeviceMake"}},
+			expectedRequest:           openrtb2.BidRequest{Device: &openrtb2.Device{Make: "DeviceMake"}},
+		},
+		{
+			description: "req.Device defined; bidderFPD.Device not defined; expect request.Device remains the same",
+			inputFpd: map[openrtb_ext.BidderName]*firstpartydata.ResolvedFirstPartyData{
+				"bidderNormalized": {Device: nil},
+			},
+			inputBidderName:           "bidderFromRequest",
+			inputBidderCoreName:       "bidderNormalized",
+			inputBidderIsRequestAlias: false,
+			inputRequest:              openrtb2.BidRequest{Device: &openrtb2.Device{Make: "TestDeviceMake"}},
+			expectedRequest:           openrtb2.BidRequest{Device: &openrtb2.Device{Make: "TestDeviceMake"}},
 		},
 	}
 
@@ -3857,7 +4124,7 @@ func TestCleanOpenRTBRequestsFilterBidderRequestExt(t *testing.T) {
 	}
 
 	for _, test := range testCases {
-		req := newBidRequestWithBidderParams(t)
+		req := newBidRequestWithBidderParams()
 		req.Ext = nil
 		var extRequest *openrtb_ext.ExtRequest
 		if test.inExt != nil {
@@ -3888,7 +4155,7 @@ func TestCleanOpenRTBRequestsFilterBidderRequestExt(t *testing.T) {
 			bidderInfo:        config.BidderInfos{},
 		}
 
-		bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, extRequest, gdpr.SignalNo, false, map[string]float64{})
+		bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, extRequest, map[string]float64{})
 		assert.Equal(t, test.wantError, len(errs) != 0, test.desc)
 		sort.Slice(bidderRequests, func(i, j int) bool {
 			return bidderRequests[i].BidderCoreName < bidderRequests[j].BidderCoreName
@@ -3896,6 +4163,65 @@ func TestCleanOpenRTBRequestsFilterBidderRequestExt(t *testing.T) {
 		for i, wantBidderRequest := range test.wantExt {
 			assert.Equal(t, wantBidderRequest, bidderRequests[i].BidRequest.Ext, test.desc+" : "+string(bidderRequests[i].BidderCoreName)+"\n\t\tGotRequestExt : "+string(bidderRequests[i].BidRequest.Ext))
 		}
+	}
+}
+
+func TestGetTargetDataPrefix(t *testing.T) {
+	testCases := []struct {
+		description      string
+		requestPrefix    string
+		account          config.Account
+		expectedResult   string
+		expectedWarnings int
+	}{
+		{
+			description:   "TruncateTargetAttribute set is nil",
+			requestPrefix: "",
+			account: config.Account{
+				TargetingPrefix:         "hb",
+				TruncateTargetAttribute: nil,
+			},
+			expectedResult:   "hb",
+			expectedWarnings: 0,
+		},
+		{
+			description:   "TargetingPrefix set in Account",
+			requestPrefix: "tst",
+			account: config.Account{
+				TargetingPrefix:         "tst",
+				TruncateTargetAttribute: intPtr(15),
+			},
+			expectedResult:   "tst",
+			expectedWarnings: 0,
+		},
+		{
+			description:   "TargetingPrefix is longer than expected",
+			requestPrefix: "test",
+			account: config.Account{
+				TargetingPrefix:         "test",
+				TruncateTargetAttribute: intPtr(15),
+			},
+			expectedResult:   "hb",
+			expectedWarnings: 1,
+		},
+		{
+			description:   "TruncateTargetAttribute is smaller than expected",
+			requestPrefix: "test",
+			account: config.Account{
+				TargetingPrefix:         "test",
+				TruncateTargetAttribute: intPtr(1),
+			},
+			expectedResult:   "hb",
+			expectedWarnings: 1,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			result, warnings := getTargetDataPrefix(tc.requestPrefix, tc.account)
+			assert.Equal(t, tc.expectedResult, result)
+			assert.Len(t, warnings, tc.expectedWarnings)
+		})
 	}
 }
 
@@ -4705,7 +5031,6 @@ func TestGetPrebidMediaTypeForBid(t *testing.T) {
 			} else {
 				assert.Equal(t, tt.expectedError, err.Error())
 			}
-
 		})
 	}
 }
@@ -4761,7 +5086,6 @@ func TestGetMediaTypeForBid(t *testing.T) {
 			} else {
 				assert.Equal(t, tt.expectedError, err.Error())
 			}
-
 		})
 	}
 }
@@ -4810,10 +5134,11 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 		expectedDevice    openrtb2.Device
 		expectedSource    openrtb2.Source
 		expectedImpExt    json.RawMessage
+		expectedErrors    []error
 	}{
 		{
 			name:              "fetch_bids_request_with_one_bidder_allowed",
-			req:               newBidRequest(t),
+			req:               newBidRequest(),
 			privacyConfig:     getFetchBidsActivityConfig("appnexus", true),
 			ortbVersion:       "2.6",
 			expectedReqNumber: 1,
@@ -4823,16 +5148,20 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 		},
 		{
 			name:              "fetch_bids_request_with_one_bidder_not_allowed",
-			req:               newBidRequest(t),
+			req:               newBidRequest(),
 			privacyConfig:     getFetchBidsActivityConfig("appnexus", false),
 			expectedReqNumber: 0,
 			expectedUser:      expectedUserDefault,
 			expectedDevice:    expectedDeviceDefault,
 			expectedSource:    expectedSourceDefault,
+			expectedErrors: []error{&errortypes.Warning{
+				Message:     `bidder "appnexus" blocked by privacy settings`,
+				WarningCode: errortypes.BidderBlockedByPrivacySettings,
+			}},
 		},
 		{
 			name:              "transmit_ufpd_allowed",
-			req:               newBidRequest(t),
+			req:               newBidRequest(),
 			privacyConfig:     getTransmitUFPDActivityConfig("appnexus", true),
 			ortbVersion:       "2.6",
 			expectedReqNumber: 1,
@@ -4841,10 +5170,10 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 			expectedSource:    expectedSourceDefault,
 		},
 		{
-			//remove user.eids, user.ext.data.*, user.data.*, user.{id, buyeruid, yob, gender}
-			//and device-specific IDs
+			// remove user.eids, user.ext.data.*, user.data.*, user.{id, buyeruid, yob, gender}
+			// and device-specific IDs
 			name:              "transmit_ufpd_deny",
-			req:               newBidRequest(t),
+			req:               newBidRequest(),
 			privacyConfig:     getTransmitUFPDActivityConfig("appnexus", false),
 			expectedReqNumber: 1,
 			expectedUser: openrtb2.User{
@@ -4874,7 +5203,7 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 		},
 		{
 			name:              "transmit_precise_geo_allowed",
-			req:               newBidRequest(t),
+			req:               newBidRequest(),
 			privacyConfig:     getTransmitPreciseGeoActivityConfig("appnexus", true),
 			ortbVersion:       "2.6",
 			expectedReqNumber: 1,
@@ -4883,10 +5212,10 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 			expectedSource:    expectedSourceDefault,
 		},
 		{
-			//round user's geographic location by rounding off IP address and lat/lng data.
-			//this applies to both device.geo and user.geo
+			// round user's geographic location by rounding off IP address and lat/lng data.
+			// this applies to both device.geo and user.geo
 			name:              "transmit_precise_geo_deny",
-			req:               newBidRequest(t),
+			req:               newBidRequest(),
 			privacyConfig:     getTransmitPreciseGeoActivityConfig("appnexus", false),
 			ortbVersion:       "2.6",
 			expectedReqNumber: 1,
@@ -4919,7 +5248,7 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 		},
 		{
 			name:              "transmit_tid_allowed",
-			req:               newBidRequest(t),
+			req:               newBidRequest(),
 			privacyConfig:     getTransmitTIDActivityConfig("appnexus", true),
 			ortbVersion:       "2.6",
 			expectedReqNumber: 1,
@@ -4928,9 +5257,9 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 			expectedSource:    expectedSourceDefault,
 		},
 		{
-			//remove source.tid and imp.ext.tid
+			// remove source.tid and imp.ext.tid
 			name:              "transmit_tid_deny",
-			req:               newBidRequest(t),
+			req:               newBidRequest(),
 			privacyConfig:     getTransmitTIDActivityConfig("appnexus", false),
 			ortbVersion:       "2.6",
 			expectedReqNumber: 1,
@@ -4972,8 +5301,8 @@ func TestCleanOpenRTBRequestsActivities(t *testing.T) {
 				bidderInfo:        config.BidderInfos{"appnexus": config.BidderInfo{OpenRTB: &config.OpenRTBInfo{Version: test.ortbVersion}}},
 			}
 
-			bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, gdpr.SignalNo, false, map[string]float64{})
-			assert.Empty(t, errs)
+			bidderRequests, _, errs := reqSplitter.cleanOpenRTBRequests(context.Background(), auctionReq, nil, map[string]float64{})
+			assert.Equal(t, test.expectedErrors, errs)
 			assert.Len(t, bidderRequests, test.expectedReqNumber)
 
 			if test.expectedReqNumber == 1 {
@@ -5436,4 +5765,114 @@ func TestRemoveImpsWithStoredResponses(t *testing.T) {
 		assert.NoError(t, request.RebuildRequest())
 		assert.Equal(t, testCase.expectedImps, request.Imp, "incorrect Impressions for testCase %s", testCase.description)
 	}
+}
+
+func TestExtractAndCleanBuyerUIDs(t *testing.T) {
+	tests := []struct {
+		name              string
+		user              *openrtb2.User
+		expectedBuyerUIDs map[string]string
+		expectedUser      *openrtb2.User
+		expectError       bool
+	}{
+		{
+			name:              "user_is_nil",
+			user:              nil,
+			expectedBuyerUIDs: nil,
+			expectedUser:      nil,
+			expectError:       false,
+		},
+		{
+			name: "user.ext_is_nil",
+			user: &openrtb2.User{
+				Ext: nil,
+			},
+			expectedBuyerUIDs: nil,
+			expectedUser: &openrtb2.User{
+				Ext: nil,
+			},
+			expectError: false,
+		},
+		{
+			name: "user.ext_malformed",
+			user: &openrtb2.User{
+				Ext: json.RawMessage(`{"prebid":}`),
+			},
+			expectedBuyerUIDs: nil,
+			expectedUser: &openrtb2.User{
+				Ext: json.RawMessage(`{"prebid":}`),
+			},
+			expectError: true,
+		},
+		{
+			name: "user.ext.prebid_is_nil",
+			user: &openrtb2.User{
+				Ext: json.RawMessage(`{"prebid":null}`),
+			},
+			expectedBuyerUIDs: nil,
+			expectedUser: &openrtb2.User{
+				Ext: nil,
+			},
+			expectError: false,
+		},
+		{
+			name: "user.ext.prebid.buyeruids_is_nil",
+			user: &openrtb2.User{
+				Ext: json.RawMessage(`{"prebid":{"buyeruids": null}}`),
+			},
+			expectedBuyerUIDs: nil,
+			expectedUser: &openrtb2.User{
+				Ext: nil,
+			},
+			expectError: false,
+		},
+		{
+			name: "user.ext.prebid.buyeruids_has_one",
+			user: &openrtb2.User{
+				Ext: json.RawMessage(`{"prebid":{"buyeruids": {"appnexus":"a"}}}`),
+			},
+			expectedBuyerUIDs: map[string]string{"appnexus": "a"},
+			expectedUser: &openrtb2.User{
+				Ext: nil,
+			},
+			expectError: false,
+		},
+		{
+			name: "user.ext.prebid.buyeruids_has_many",
+			user: &openrtb2.User{
+				Ext: json.RawMessage(`{"prebid":{"buyeruids": {"appnexus":"a", "pubmatic":"b"}}}`),
+			},
+			expectedBuyerUIDs: map[string]string{"appnexus": "a", "pubmatic": "b"},
+			expectedUser: &openrtb2.User{
+				Ext: nil,
+			},
+			expectError: false,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			req := openrtb_ext.RequestWrapper{
+				BidRequest: &openrtb2.BidRequest{
+					User: test.user,
+				},
+			}
+
+			result, err := extractAndCleanBuyerUIDs(&req)
+			if test.expectError {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+
+			assert.NoError(t, req.RebuildRequest())
+
+			assert.Equal(t, req.User, test.expectedUser)
+			assert.Equal(t, test.expectedBuyerUIDs, result)
+		})
+	}
+}
+
+func intPtr(i int) *int {
+	return &i
 }
