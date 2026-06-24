@@ -1,4 +1,4 @@
-package mockBidder
+package mockStroeer
 
 import (
 	"encoding/json"
@@ -144,7 +144,7 @@ func (a *adapter) MakeRequests(bidRequest *openrtb2.BidRequest, extraRequestInfo
 	}}, errors
 }
 
-// Builder builds a new instance of the MockBidder adapter for the given bidder with the given config.
+// Builder builds a new instance of the mockStroeer adapter for the given bidder with the given config.
 func Builder(bidderName openrtb_ext.BidderName, config config.Adapter, server config.Server) (adapters.Bidder, error) {
 	bidder := &adapter{
 		URL: config.Endpoint,
